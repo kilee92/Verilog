@@ -11,7 +11,7 @@ module FSM_Vedning_Machine(
     o_led_sprite    ,
     o_coffee        ,
     o_sprite        ,
-    o_seg            
+    BCD_signal       
 );
 
 
@@ -25,7 +25,7 @@ output reg          o_led_coffee    ;
 output reg          o_led_sprite    ;
 output reg          o_coffee        ;
 output reg          o_sprite        ;
-output reg [1:0]    o_seg           ; // LED Segment 동작을 위한 Output 출력 (2bit: 0~4)
+output reg [1:0]    BCD_signal      ; // Segment Decoder input을 위한 BCD signal 출력 (2bit: 0~4)
 
 reg [2:0] state, n_state;
 
@@ -101,63 +101,63 @@ always @(state) begin
             o_led_sprite <= 0;
             o_coffee <= 0;
             o_sprite <= 0;
-            o_seg <= 2'b00;
+            BCD_signal <= 2'b00;
 
         COIN_1:
             o_led_coffee <= 1;
             o_led_sprite <= 0;
             o_coffee <= 0;
             o_sprite <= 0;
-            o_seg <= 2'b01;
+            BCD_signal <= 2'b01;
 
         COIN_2:
             o_led_coffee <= 1;
             o_led_sprite <= 0;
             o_coffee <= 0;
             o_sprite <= 0;
-            o_seg <= 2'b10;
+            BCD_signal <= 2'b10;
 
         COIN_3:
             o_led_coffee <= 1;
             o_led_sprite <= 1;
             o_coffee <= 0;
             o_sprite <= 0;
-            o_seg <= 2'b11;
+            BCD_signal <= 2'b11;
 
         COFFEE_OUT_1: //coffee가 나온 후 IDLE state로 이동
             o_led_coffee <= 0;
             o_led_sprite <= 0;
             o_coffee <= 1;
             o_sprite <= 0;
-            o_seg <= 2'b00;
+            BCD_signal <= 2'b00;
 
         COFFEE_OUT_2: //coffee가 나온 후 COIN_1 state로 이동
             o_led_coffee <= 1;
             o_led_sprite <= 0;
             o_coffee <= 1;
             o_sprite <= 0;
-            o_seg <= 2'b01;
+            BCD_signal <= 2'b01;
 
         COFFEE_OUT_3: //coffee가 나온 후 COIN_2 state로 이동
             o_led_coffee <= 1;
             o_led_sprite <= 0;
             o_coffee <= 1;
             o_sprite <= 0;
-            o_seg <= 2'b10;
+            BCD_signal <= 2'b10;
 
         SPRITE_OUT: //sprite가 나온 후 IDLE state로 이동
             o_led_coffee <= 0;
             o_led_sprite <= 0;
             o_coffee <= 0;
             o_sprite <= 1;
-            o_seg <= 2'b00;
+            BCD_signal <= 2'b00;
 
         default: //Latch 방지
             o_led_coffee <= 0;
             o_led_sprite <= 0;
             o_coffee <= 0;
             o_sprite <= 0;
-            o_seg <= 2'b00;
+            BCD_signal <= 2'b00;
 
     endcase
 end
