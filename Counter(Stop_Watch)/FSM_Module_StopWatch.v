@@ -3,7 +3,7 @@
 //설계 목표: Counter를 이용한 분주기(prescaler)와 Finite State Machine (Moore)를 이용하여 스톱워치 설계
 //참고: 시스템은 50MHz의 기본주파수를 갖음
 
-module FSM_Module_SW(
+module FSM_Module_StopWatch(
     clk             ,
     rst_n           ,
     i_start_pause   ,
