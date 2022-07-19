@@ -1,5 +1,7 @@
 //작성자: 이광일
-//설계 목표: Finite State Machine (Moore)를 이용한 자판기 설계
+//설계명: Vending Machine
+//설계 목표: 커피와 스프라이트를 판매하는 자판기를 Finite State Machine (Moore)를 이용하여 설계
+//참고: 최대 3원까지 투입이 가능하며 7-Segment Decoder를 이용하여 LED출력 
 
 module FSM_Module_VM(
     clk             ,
@@ -25,7 +27,7 @@ output reg          o_led_coffee    ;
 output reg          o_led_sprite    ;
 output reg          o_coffee        ;
 output reg          o_sprite        ;
-output reg [1:0]    BCD_signal      ; // Segment Decoder input을 위한 BCD signal 출력 (2bit: 0~4)
+output reg [1:0]    BCD_signal      ; // 7-Segment Decoder input을 위한 BCD signal 출력 (2bit: 0~4)
 
 reg [2:0] state, n_state;
 
