@@ -1,4 +1,11 @@
-module FSM_Module_SW(
+module FSM_Module_SW
+#(
+    //Output parameter - 전역 Parameter로 외부 변경(o)
+    parameter ENABLE     = 2'b00;
+    parameter DISABLE    = 2'b01;
+    parameter RESET      = 2'b10;  
+)
+(
     clk             ,
     rst_n           ,
     i_start_pause   ,
@@ -15,15 +22,10 @@ output reg [1:0]    cnt_ctrl        ; //Output을 통해 Counter 동작 여부 �
 
 reg [1:0] state, n_state;
 
-//State parameter
-localparam = IDLE   = 2'b00;
-localparam = COUNT  = 2'b01;
-localparam = PAUSE  = 2'b10;
-
-//Output parameter
-localparam = ENABLE     = 2'b00;
-localparam = DISABLE    = 2'b01;
-localparam = RESET      = 2'b10;
+//State parameter 지역 parameter로 외부 변경(x)
+localparam IDLE   = 2'b00;
+localparam COUNT  = 2'b01;
+localparam PAUSE  = 2'b10;
 
 //State register(DFF)
 always @(posedge clk or negedge rst_n) begin
