@@ -1,15 +1,9 @@
 //작성자: 이광일
 //설계명: Stop Watch
-//설계 목표: Counter를 이용한 분주기(prescaler)와 Finite State Machine (Moore)를 이용한 Stop Watch 설계
+//설계 목표: Counter를 이용한 분주기(prescaler)와 Finite State Machine (Moore)를 이용하여 스톱워치 설계
+//참고: 시스템은 50MHz의 기본주파수를 갖음
 
-module FSM_Module_SW
-#(
-    //Output parameter - 전역 Parameter로 외부 변경(o)
-    parameter ENABLE     = 2'b00;
-    parameter DISABLE    = 2'b01;
-    parameter RESET      = 2'b10;  
-)
-(
+module FSM_Module_SW(
     clk             ,
     rst_n           ,
     i_start_pause   ,
@@ -22,14 +16,14 @@ input               rst_n           ;
 input               i_start_pause   ;
 input               i_stop          ;
 
-output reg [1:0]    cnt_ctrl        ; //Output을 통해 Counter 동작 여부 결정
+output reg [1:0]    cnt_ctrl        ; //counter control 출력값을 통해 Counter 동작 여부 결정
 
 reg [1:0] state, n_state;
 
-//State parameter 지역 parameter로 외부 변경(x)
-localparam IDLE   = 2'b00;
-localparam COUNT  = 2'b01;
-localparam PAUSE  = 2'b10;
+//State parameter
+parameter IDLE   = 2'b00;
+parameter COUNT  = 2'b01;
+parameter PAUSE  = 2'b10;
 
 //State register(DFF)
 always @(posedge clk or negedge rst_n) begin
@@ -72,13 +66,13 @@ end
 //Output logic
 always @(state) begin
     case(state)
-        IDLE: cnt_ctrl = RESET;
+        IDLE: cnt_ctrl = IDLE;
 
-        COUNT: cnt_ctrl = ENABLE;
+        COUNT: cnt_ctrl = COUNT;
 
-        RESET: cnt_ctrl = DISABLE;
+        PAUSE: cnt_ctrl = PAUSE;
 
-        default : cnt_ctrl = RESET
+        default : cnt_ctrl = IDLE;
 
     endcase
 end
