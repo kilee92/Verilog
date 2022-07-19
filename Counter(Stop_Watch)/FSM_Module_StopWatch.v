@@ -34,7 +34,7 @@ always @(posedge clk or negedge rst_n) begin
 end
 
 //State logic
-always @(state or i_start_pause or i_stop) begin
+    always @(state or i_start_pause or i_stop) begin // state or 입력(i_start_pause or i_stop)에 따라 state 결정
     case(state)
         IDLE:
             if(i_start_pause)
