@@ -1,3 +1,7 @@
+//작성자: 이광일
+//설계명: Stop Watch
+//설계 목표: Counter를 이용한 분주기(prescaler)와 Finite State Machine (Moore)를 이용한 Stop Watch 설계
+
 module FSM_Module_SW
 #(
     //Output parameter - 전역 Parameter로 외부 변경(o)
