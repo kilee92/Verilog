@@ -1,7 +1,7 @@
 //작성자: 이광일
 //설계 목표: Finite State Machine (Moore)를 이용한 자판기 설계
 
-module FSM_Vedning_Machine(
+module FSM_Module(
     clk             ,
     rst_n           ,
     i_coin          ,
