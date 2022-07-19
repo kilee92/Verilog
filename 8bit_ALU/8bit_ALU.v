@@ -1,0 +1,75 @@
+module ALU_8bit(
+    i_a     ,
+    i_b     ,
+    i_func  ,
+    o_alu   
+);
+
+input [7:0]         i_a     ;
+input [7:0]         i_b     ;
+input [3:0]         i_func  ;
+
+output reg [7:0]    o_alu   ;
+
+always @(i_a or i_b or i_func) begin
+    case
+        4'b0000: //A AND B
+            o_alu = i_a & i_b;
+        
+        4'b0001: //A OR B
+            o_alu = i_a | i_b;
+
+        4'b0010: // A + B
+            if(i_a + i_b >= 9'b1_0000_0000)
+                o_alu = 8'hEE;
+            else
+                o_alu = i_a + i_b;
+
+        4'b0011: //A - B
+            if(i_a >= i_b)
+                o_alu = i_a - i_b;
+            else
+                o_alu = 8'hEE;
+
+        4'b0100: //A << B
+            o_alu = i_a << i_b;
+        
+        4'b0101: //A >> B
+            o_alu = i_a >> i_b;
+        
+        4'b0110: //A >>> B
+            o_alu = i_a >>> i_b;
+        
+        4'b0111: //A XOR B
+            o_alu = i_a ^ i_b;
+
+        4'b1000: //if A = B, Y is True
+            o_alue = (i_a == i_b) ? 8'h01 : 8'h00;
+
+        4'b1001: //if A >= B, Y is True
+            o_alue = (i_a >= i_b) ? 8'h01 : 8'h00;
+
+        4'b1010: //if A < B, Y is True
+            o_alue = (i_a < i_b) ? 8'h01 : 8'h00;
+
+        4'b1011: // A + B*2
+            o_alu = i_a + (i_b <<1);
+
+        4'b1100: //A + 4'H4
+            o_alu = i_a + 4h'4;
+
+        4'b1101: // A - 4'H4
+            o_alu = i_a - 4h'4;
+
+        4'b1110: //if A > B, Y is A Else Y is 0
+            o_alu = (i_a > i_b) ? i_a : 8'h00;
+
+        4'b1111: //if A < B, Y is A Else Y is 0
+            o_alu = (i_a < i_b) ? i_a : 8'h00
+
+        default:
+            o_alu = 8'h00;
+
+    endcase
+end
+endmodule
