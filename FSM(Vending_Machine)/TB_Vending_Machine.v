@@ -1,3 +1,7 @@
+
+//작성자: 이광일
+//설계 목표: Finite State Machine (Moore)를 이용한 자판기 설계
+
 `timescale 1ns/1ps
 
 module TB_Vending_Machine();
