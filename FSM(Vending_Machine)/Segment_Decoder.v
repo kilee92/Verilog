@@ -1,3 +1,6 @@
+
+//작성자: 이광일
+//설계 목표: Finite State Machine (Moore)를 이용한 자판기 설계
 module Segment_Decoder(
     BCD_signal  ,
     o_seg            
