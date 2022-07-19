@@ -19,13 +19,13 @@ input               clk         ;
 input               rst_n       ;
 input [1:0]         cnt_ctrl    ;
 
-//단위 시간별(0.01초, 0.1초, 1초, 10초, 1분, 10분) Output값 출력하여 Segment Decoder Control에 전달
-output [3:0]        t_ms0       ;
-output [3:0]        t_ms1       ;
-output [3:0]        t_s0        ;
-output [3:0]        t_s1        ;
-output [3:0]        t_m0        ;
-output [3:0]        t_m1        ;
+//단위 시간별(0.01초, 0.1초, 1초, 10초, 1분, 10분) Output값 출력하여 Segment Decoder Module에 전달
+output reg [3:0]    t_ms0       ;
+output reg [3:0]    t_ms1       ;
+output reg [3:0]    t_s0        ;
+output reg [3:0]    t_s1        ;
+output reg [3:0]    t_m0        ;
+output reg [3:0]    t_m1        ;
 
 //2^16 = 65536
 reg [15:0] cnt_reg;
