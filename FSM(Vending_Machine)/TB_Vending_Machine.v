@@ -1,6 +1,7 @@
-
 //작성자: 이광일
-//설계 목표: Finite State Machine (Moore)를 이용한 자판기 설계
+//설계명: Vending Machine
+//설계 목표: 커피와 스프라이트를 판매하는 자판기를 Finite State Machine (Moore)를 이용하여 설계
+//참고: 최대 3원까지 투입이 가능하며 7-Segment Decoder를 이용하여 LED출력 
 
 `timescale 1ns/1ps
 
