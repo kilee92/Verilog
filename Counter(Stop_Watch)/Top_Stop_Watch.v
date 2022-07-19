@@ -17,7 +17,7 @@ output  [3:0]       t_s1     ;
 output  [3:0]       t_m0     ;
 output  [3:0]       t_m1     ;
 
-wire [1:0] cnt_ctrl ;
+wire [1:0] cnt_ctrl;
 
 //Module instance
 FSM_Module_StopWatch u0(
