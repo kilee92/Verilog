@@ -38,7 +38,7 @@ parameter PAUSE  = 2'b10;
 always @(posedge clk or negedge rst_n) begin
     if(~rst_n)
         cnt_reg <= 16'b0;
-    else if((cnt_reg == 499999) || (cnt_ctrl == IDLE))
+    else if((cnt_reg == 49/*9999*/) || (cnt_ctrl == IDLE))
         cnt_reg <= 16'b0;
     else if(cnt_ctrl == COUNT)
         cnt_reg <= cnt_reg + 32'b1;
@@ -52,7 +52,7 @@ always @(posedge clk or negedge rst_n) begin
         t_ms0 <= 4'b0;
     else if((t_ms0 == 4'd10) || (cnt_ctrl == IDLE))
         t_ms0 <= 4'b0;
-    else if(cnt_reg == 499999)//50MHz(1초에 50000000번) -> 500000 카운트하여 0.01초를 찾음
+    else if(cnt_reg == 49/*9999*/)//50MHz(1초에 50000000번) -> 500000 카운트하여 0.01초를 찾음 (test를 위해 49로 축소)
         t_ms0 <= t_ms0 + 4'b1;
     else
         t_ms0 <= t_ms0;
