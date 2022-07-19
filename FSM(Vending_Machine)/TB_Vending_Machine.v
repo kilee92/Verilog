@@ -108,7 +108,7 @@ initial begin
 end
 
 //Module instance
-FSM_Vedning_Machine u0(
+FSM_Module_VM u0(
     .clk             (clk         ),
     .rst_n           (rst_n       ),
     .i_coin          (i_coin      ),
