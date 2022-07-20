@@ -1,7 +1,7 @@
 //작성자: 이광일
-//설계명: UART(Tx)
-//설계 목표: Shift Register를 포함하는 비동기 통신 중 하나인 UART Tx Module 설계
-//참고: Buad Rate은 115200(1/115200초 마다 1비트 전송)이며 시작비트(0)과 끝비트(1)을 포함하고 데이터비트는 8비트이다.
+//설계명: Vending Machine
+//설계 목표: 커피와 스프라이트를 판매하는 자판기를 Finite State Machine (Moore)를 이용하여 설계
+//참고: 최대 3원까지 투입이 가능하며 7-Segment Decoder를 이용하여 LED출력 
 
 module Top_Vending_Machine(
     clk             ,
