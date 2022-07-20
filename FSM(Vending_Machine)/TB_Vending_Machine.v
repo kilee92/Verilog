@@ -107,7 +107,6 @@ initial begin
     #100
 
     $finish;
-
 end
 
 //Module instance
