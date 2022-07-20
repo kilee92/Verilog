@@ -24,7 +24,6 @@ o_rx_complete       ;
 o_rx_error          ;
 
 
-[4:0] sample_cnt_reg;
 [3:0] bit_cnt_reg;
 b0, b1, b2;
  catch_bit;
@@ -67,10 +66,10 @@ always @(state or i_rx_d or sampling) begin //state, i_rx_d, sampling 신호가 
         START_CHECK: begin
             if(sampling == 1 && i_rx_d == 1) //sampling 하는 시작 비트(0)가 1이 될 경우(Noise가 낄 경우) 다시 IDLE로 상태로 돌아가 새로운 신호 전송을 기다림
                 n_state = IDLE;
-            else if(sample_cnt_reg == 4'd7) // 8 times flag (cnt = 7) -> middle point (always에 sample_cnt_reg가 포함되있음)
+            else if(sample_cnt == 7) // 8 check (0 ~ 7) -> middle point
                 n_state = SAMPLE_CNT_RST;
             else
-                    n_state = START_CHECK;
+                n_state = START_CHECK;
         end
 
         SAMPLE_CNT_RST:
@@ -180,46 +179,22 @@ end
 assign o_rx_complete = state == RECEIVE_COMPLETE ? 1'b1 : 1'b0;
 assign o_rx_error = state == RECEIVE_ERROR ? 1'b1 : 1'b0;
 
-//sample counter
-always @(posedge clk) begin
-    case(state)
-        IDLE: 
-            sample_cnt_reg <= 5'd0;
+//Sample counter
+reg [4:0] sample_cnt;
 
-        START_CHECK: begin
-            if(sampling_flag == 1)
-                sample_cnt_reg <= sample_cnt_reg + 5'd1;
-            else
-                sample_cnt_reg <= sample_cnt_reg;
-        end
-
-        SAMPLE_CNT_RST:
-            sample_cnt_reg <= 5'd0;
-
-        F_WAIT: begin
-            if(sampling_flag == 1)
-                sample_cnt_reg <= sample_cnt_reg + 5'd1;
-            else
-                sample_cnt_reg <= sample_cnt_reg;
-        end
-
-        S_WAIT: begin
-            if(sampling_flag == 1)
-                sample_cnt_reg <= sample_cnt_reg + 5'd1;
-            else
-                sample_cnt_reg <= sample_cnt_reg;
-        end
-
-        T_WAIT: begin
-            if(sampling_flag == 1)
-                sample_cnt_reg <= sample_cnt_reg + 5'd1;
-            else
-                sample_cnt_reg <= sample_cnt_reg;
-        end
-
-        default: sample_cnt_reg <= sample_cnt_reg; //F_Sample, S_Sample, T_Sample, STOP_DECISION, DATA_DECISION,
-    
-    endcase
+always @(posedge clk or negedge rst_n) begin
+    if(~rst_n)
+        sample_cnt <= 0;
+    else if(state == IDLE)
+        sample_cnt <= 0;
+    else if(state == SAMPLE_CNT_RST)
+        sample_cnt <= 0;
+    else begin
+        if(sampling)
+            sample_cnt <= sample_cnt + 1'b1;
+        else
+            sample_cnt <= sample_cnt;
+    end
 end
 
 //bit counter
