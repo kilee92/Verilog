@@ -15,7 +15,7 @@ module FSM_Module_VM(
     o_sprite        ,
     BCD_signal       
 );
-
+    `probe(state);
 
 input               clk             ;
 input               rst_n           ;
@@ -50,7 +50,7 @@ always @(posedge clk or negedge rst_n) begin
 end
 
 //State logic
-always(state or i_coin or i_coffee or i_sprite) begin
+always @(state or i_coin or i_coffee or i_sprite) begin
     case(state)
         IDLE:
             if(i_coin)
@@ -98,68 +98,77 @@ end
 //Output logic (Moore: 현재 상태(state)에 의해서만 output 출력)
 always @(state) begin
     case(state)
-        IDLE: 
+        IDLE: begin
             o_led_coffee <= 0;
             o_led_sprite <= 0;
             o_coffee <= 0;
             o_sprite <= 0;
             BCD_signal <= 2'b00;
+        end
 
-        COIN_1:
+        COIN_1: begin
             o_led_coffee <= 1;
             o_led_sprite <= 0;
             o_coffee <= 0;
             o_sprite <= 0;
             BCD_signal <= 2'b01;
+        end
 
-        COIN_2:
+        COIN_2: begin
             o_led_coffee <= 1;
             o_led_sprite <= 0;
             o_coffee <= 0;
             o_sprite <= 0;
             BCD_signal <= 2'b10;
+        end
 
-        COIN_3:
+        COIN_3: begin
             o_led_coffee <= 1;
             o_led_sprite <= 1;
             o_coffee <= 0;
             o_sprite <= 0;
             BCD_signal <= 2'b11;
+        end
 
-        COFFEE_OUT_1: //coffee가 나온 후 IDLE state로 이동
+        COFFEE_OUT_1: begin//coffee가 나온 후 IDLE state로 이동
             o_led_coffee <= 0;
             o_led_sprite <= 0;
             o_coffee <= 1;
             o_sprite <= 0;
             BCD_signal <= 2'b00;
+        end
 
-        COFFEE_OUT_2: //coffee가 나온 후 COIN_1 state로 이동
+        COFFEE_OUT_2: begin//coffee가 나온 후 COIN_1 state로 이동
             o_led_coffee <= 1;
             o_led_sprite <= 0;
             o_coffee <= 1;
             o_sprite <= 0;
             BCD_signal <= 2'b01;
+        end
 
-        COFFEE_OUT_3: //coffee가 나온 후 COIN_2 state로 이동
+        COFFEE_OUT_3: begin//coffee가 나온 후 COIN_2 state로 이동
             o_led_coffee <= 1;
             o_led_sprite <= 0;
             o_coffee <= 1;
             o_sprite <= 0;
             BCD_signal <= 2'b10;
+        end
 
-        SPRITE_OUT: //sprite가 나온 후 IDLE state로 이동
+        SPRITE_OUT: begin//sprite가 나온 후 IDLE state로 이동
             o_led_coffee <= 0;
             o_led_sprite <= 0;
             o_coffee <= 0;
             o_sprite <= 1;
             BCD_signal <= 2'b00;
+        end
 
-        default: //Latch 방지
+        default: begin//Latch 방지
             o_led_coffee <= 0;
             o_led_sprite <= 0;
             o_coffee <= 0;
             o_sprite <= 0;
             BCD_signal <= 2'b00;
+        end
 
     endcase
 end
