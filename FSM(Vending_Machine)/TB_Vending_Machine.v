@@ -19,8 +19,6 @@ wire            o_coffee        ;
 wire            o_sprite        ;
 wire [7:0]      o_seg           ;
 
-wire [1:0]      BCD_signal      ;
-
 always #10 clk = ~clk; //클럭 주파수는 50MHz로 설정 (주기는 20ns)
 
 initial begin
@@ -113,7 +111,7 @@ initial begin
 end
 
 //Module instance
-FSM_Module_VM u0(
+Top_Vending_Machine u0(
     .clk             (clk         ),
     .rst_n           (rst_n       ),
     .i_coin          (i_coin      ),
@@ -123,12 +121,7 @@ FSM_Module_VM u0(
     .o_led_sprite    (o_led_sprite),
     .o_coffee        (o_coffee    ),
     .o_sprite        (o_sprite    ),
-    .BCD_signal      (BCD_signal  ) 
-);
-
-Segment_Decoder U1(
-    .BCD_signal  (BCD_signal),
-    .o_seg       (o_seg     )     
+    .o_seg           (o_seg       ) 
 );
 
 endmodule
