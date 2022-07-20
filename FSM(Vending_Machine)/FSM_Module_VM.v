@@ -15,7 +15,6 @@ module FSM_Module_VM(
     o_sprite        ,
     BCD_signal       
 );
-    `probe(state);
 
 input               clk             ;
 input               rst_n           ;
