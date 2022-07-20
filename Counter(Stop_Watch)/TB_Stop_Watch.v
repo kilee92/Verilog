@@ -25,7 +25,7 @@ wire [3:0]      BCD_signal      ;
 wire {7:0}      o_seg           ;
 wire [6:0]      seg_sel         ;
 
-always #10 clk = ~clk;
+always #1 clk = ~clk;
 
 initial begin
     clk = 0;
