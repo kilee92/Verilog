@@ -24,6 +24,7 @@ input               sampling            ;
 
 output reg          catch_bit           ;
 output reg [3:0]    catch_bit_cnt       ;
+output reg          shift_rst           ;
 output              o_rx_complete       ;
 output              o_rx_error          ;
 
@@ -53,7 +54,7 @@ always @(posedge clk or negedge rst_n) begin
 end
 
 //State logic
-always @(state or i_rx_d or sampling or sample_cnt) begin //state, i_rx_d, sampling 신호가 바뀔 때에만 동작(clk와 상관(X))
+always @(state or i_rx_d or sampling or sample_cnt or bit_cnt) begin //state, i_rx_d, sampling, sample_cnt, bit_cnt 신호가 바뀔 때에만 동작(clk와 상관(X))
     case(state)
         IDLE: begin //sampling하여 시작 비트(0)를 감지하여 다음 state로 이동
             if(sampling == 1 && i_rx_d == 0)
@@ -73,42 +74,33 @@ always @(state or i_rx_d or sampling or sample_cnt) begin //state, i_rx_d, sampl
 
         SAMPLE_CNT_RST: n_state = F_WAIT; //sample_cnt 리셋
 
-        F_WAIT: begin //시작 비트(0) middle point에서 부터 data bit (middle point - 2) 까지 
-            if(sampling) begin
-                if(sample_cnt_reg == 14) 
-                    n_state = F_SAMPLE; // 다음 클럭에 state 변화 (다음 sampling이 아님)
-                else
-                    n_state = F_WAIT;
-            end else
+        F_WAIT: begin //시작 비트(0) middle point에서 부터 data bit (middle point - 1) 까지 
+            if(sample_cnt == 15) 
+                n_state = F_SAMPLE; // 다음 클럭에 state 변화 (다음 sampling이 아님)
+            else
                 n_state = F_WAIT;
         end
 
         F_SAMPLE: n_state = S_WAIT; //데이터 비트의 1번째 sample 저장
 
-        S_WAIT: begin //시작 비트(0) middle point에서 부터 data bit (middle point - 1) 까지 
-            if(sampling_flag == 1) begin
-                if(sample_cnt_reg == 15) 
-                    n_state = S_SAMPLE;
-                else
-                    n_state = S_WAIT;
-            end else
+        S_WAIT: begin //시작 비트(0) middle point에서 부터 data bit (middle point) 까지 
+            if(sample_cnt == 16) 
+                n_state = S_SAMPLE;
+            else
                 n_state = S_WAIT;
         end
 
         S_SAMPLE: n_state = T_WAIT; //데이터 비트의 2번째 sample 저장
 
-        T_WAIT: begin //시작 비트(0) middle point에서 부터 data bit (middle point) 까지 
-            if(sampling_flag == 1) begin
-                if(sample_cnt_reg == 16) //sample_cnt = 16 일때 16번 check가 끝나는 시점 -> middle point
-                    n_state = T_SAMPLE;
-                else
-                    n_state = T_WAIT;
-            end else
+        T_WAIT: begin //시작 비트(0) middle point에서 부터 data bit (middle point + 1) 까지 
+            if(sample_cnt == 17) //sample_cnt = 16 일때 16번 check가 끝나는 시점 -> middle point
+                n_state = T_SAMPLE;
+            else
                 n_state = T_WAIT;
         end
 
         T_SAMPLE: begin //데이터 비트의 3번째 sample 저장 //8개의 data 데이터 & 1개의 stop bit가 들어 왔는지 확인
-            if(bit_cnt_reg == 4'd8) //bit_cnt = 8일 때 stop bit 확인 (9번째 bit)
+            if(bit_cnt == 4'd8) //bit_cnt = 8일 때 stop bit 확인 (9번째 bit)
                 n_state = STOP_DECISION;
             else //bit_cnt = 7일 때까지 (0 ~ 7 -> 8bit): data bit 저장 상태로 이동 
                 n_state = DATA_DECISION;
@@ -198,12 +190,19 @@ end
 
 //Output logic
 always @(state) begin
-    if(state == DATA_DECISION) begin
-        catch_bit_cnt <= bit_cnt;
-        catch_bit <= (b0&b1) | (b0&b2) | (b1&b2); //Karnom map을 통하여 논리식 확인
-    end else begin
-        catch_bit_cnt <= catch_bit_cnt;
-        catch_bit <= catch_bit;
+    if(state == IDLE)
+        shift_rst <= 1;
+        catch_bit_cnt <= 0;
+        catch_bit <= 0;
+    else begin
+        shift_rst <= 0;    
+        if(state == DATA_DECISION) begin
+            catch_bit_cnt <= bit_cnt;
+            catch_bit <= (b0&b1) | (b0&b2) | (b1&b2); //Karnom map을 통하여 논리식 확인
+        end else begin
+            catch_bit_cnt <= catch_bit_cnt;
+            catch_bit <= catch_bit;
+        end
     end
 end
 
