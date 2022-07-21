@@ -8,12 +8,12 @@ reg             i_rx_d          ;
 //output
 wire            o_rx_complete   ;
 wire            o_rx_error      ;
-wire            o_rx_d          ;
+wire [7:0]      o_rx_d          ;
 
 //wire
 wire            sampling        ;
-wire [3:0]      catch_bit       ;
-wire            catch_bit_cnt   ;
+wire            catch_bit       ;
+wire [3:0]      catch_bit_cnt   ;
 wire            shift_rst       ;
 
 //clock
@@ -24,8 +24,8 @@ initial `probe_start;
     `probe(clk          );   
     `probe(rst_n        );   
     `probe(i_rx_d       );      
-    `probe(o_rx_complete);   
-    `probe(o_rx_error   );   
+    //`probe(o_rx_complete);   
+    //`probe(o_rx_error   );   
     `probe(o_rx_d       );   
     `probe(sampling     );   
     `probe(catch_bit    );   
@@ -47,16 +47,16 @@ initial begin
     #20
 
     i_rx_d = 0;
-    #320
+    #360
 
     i_rx_d = 1;
-    #320
+    #360
 
     i_rx_d = 0;
-    #320
+    #360
 
     i_rx_d = 1;
-    #320
+    #360
 
     $finish;
 end
@@ -120,6 +120,9 @@ module FSM_Module_Rx(
     o_rx_error           
 );
 
+    `probe(state);
+    `probe(sample_cnt);
+    
 input               clk                 ;
 input               rst_n               ;
 input               i_rx_d              ;
@@ -169,7 +172,7 @@ always @(state or i_rx_d or sampling or sample_cnt) begin //state, i_rx_d, sampl
         START_CHECK: begin
             if(sampling == 1 && i_rx_d == 1) //sampling 하는 시작 비트(0)가 1이 될 경우(Noise가 낄 경우) 다시 IDLE로 상태로 돌아가 새로운 신호 전송을 기다림
                 n_state = IDLE;
-            else if(sample_cnt == 4) //sample_cnt = 8(sample_cnt = 7 이 끝나는 순간)일 때 8번(0 ~ 7)을 check하고 다음 클락에 state 변경 -> middle point
+            else if(sample_cnt == 3) //sample_cnt = 8(sample_cnt = 7 이 끝나는 순간)일 때 8번(0 ~ 7)을 check하고 다음 클락에 state 변경 -> middle point
                 n_state = SAMPLE_CNT_RST;
             else
                 n_state = START_CHECK;
@@ -178,41 +181,32 @@ always @(state or i_rx_d or sampling or sample_cnt) begin //state, i_rx_d, sampl
         SAMPLE_CNT_RST: n_state = F_WAIT; //sample_cnt 리셋
 
         F_WAIT: begin //시작 비트(0) middle point에서 부터 data bit (middle point - 2) 까지 
-            if(sampling) begin
-                if(sample_cnt_reg == 6) 
-                    n_state = F_SAMPLE; // 다음 클럭에 state 변화 (다음 sampling이 아님)
-                else
-                    n_state = F_WAIT;
-            end else
+            if(sample_cnt == 4) // sample_cnt는 sampling = 1일 때 1씩 증가
+                n_state = F_SAMPLE; // 다음 클럭에 state 변화 (다음 sampling이 아님)
+            else
                 n_state = F_WAIT;
         end
 
         F_SAMPLE: n_state = S_WAIT; //데이터 비트의 1번째 sample 저장
 
         S_WAIT: begin //시작 비트(0) middle point에서 부터 data bit (middle point - 1) 까지 
-            if(sampling_flag == 1) begin
-                if(sample_cnt_reg == 7) 
-                    n_state = S_SAMPLE;
-                else
-                    n_state = S_WAIT;
-            end else
+            if(sample_cnt == 5) 
+                n_state = S_SAMPLE;
+            else
                 n_state = S_WAIT;
         end
 
         S_SAMPLE: n_state = T_WAIT; //데이터 비트의 2번째 sample 저장
 
         T_WAIT: begin //시작 비트(0) middle point에서 부터 data bit (middle point) 까지 
-            if(sampling_flag == 1) begin
-                if(sample_cnt_reg == 8) //sample_cnt = 16 일때 16번 check가 끝나는 시점 -> middle point
-                    n_state = T_SAMPLE;
-                else
-                    n_state = T_WAIT;
-            end else
+            if(sample_cnt == 6) //sample_cnt = 16 일때 16번 check가 끝나는 시점 -> middle point
+                n_state = T_SAMPLE;
+            else
                 n_state = T_WAIT;
         end
 
         T_SAMPLE: begin //데이터 비트의 3번째 sample 저장 //8개의 data 데이터 & 1개의 stop bit가 들어 왔는지 확인
-            if(bit_cnt_reg == 4'd8) //bit_cnt = 8일 때 stop bit 확인 (9번째 bit)
+            if(bit_cnt == 4'd8) //bit_cnt = 8일 때 stop bit 확인 (9번째 bit)
                 n_state = STOP_DECISION;
             else //bit_cnt = 7일 때까지 (0 ~ 7 -> 8bit): data bit 저장 상태로 이동 
                 n_state = DATA_DECISION;
@@ -337,7 +331,7 @@ module Sampling_Counter(
 input               clk         ;
 input               rst_n       ;
 
-output              sampling    ;
+output reg          sampling    ;
 
 reg [4:0] sampling_reg;
 
@@ -345,7 +339,7 @@ reg [4:0] sampling_reg;
 always @(posedge clk or negedge rst_n) begin
     if(~rst_n)
         sampling_reg <= 0;
-    else if(sampling_reg == 3) //1초에 115200*16개의 Sample 확인(baud rate보다 16빠른 속도)
+    else if(sampling_reg == 5) //1초에 115200*16개의 Sample 확인(baud rate보다 16빠른 속도)
         sampling_reg <= 0;
     else
         sampling_reg <= sampling_reg + 1'b1;
@@ -353,7 +347,7 @@ end
 
 //Output logic
 always @(posedge clk or negedge rst_n) begin
-    if(sampling_reg == 3)
+    if(sampling_reg == 5)
         sampling <= 1;
     else 
         sampling <= 0;
