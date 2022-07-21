@@ -56,7 +56,7 @@ end
 //State logic
 always @(state or i_rx_d or sampling or sample_cnt or bit_cnt) begin //state, i_rx_d, sampling, sample_cnt, bit_cnt 신호가 바뀔 때에만 동작(clk와 상관(X))
     case(state)
-        IDLE: begin //sampling하여 시작 비트(0)를 감지하여 다음 state로 이동
+        IDLE: begin //sampling(baud rate의 16배 속도)하여 시작 비트(0)를 감지하여 다음 state로 이동
             if(sampling == 1 && i_rx_d == 0)
                 n_state = START_CHECK;
             else
@@ -64,7 +64,7 @@ always @(state or i_rx_d or sampling or sample_cnt or bit_cnt) begin //state, i_
         end
 
         START_CHECK: begin
-            if(sampling == 1 && i_rx_d == 1) //sampling 하는 시작 비트(0)가 1이 될 경우(Noise가 낄 경우) 다시 IDLE로 상태로 돌아가 새로운 신호 전송을 기다림
+            if(sampling == 1 && i_rx_d == 1) //시작 비트(0) sampling 값이 1이 될 경우(Noise가 낄 경우) 다시 IDLE로 상태로 돌아가 새로운 신호 전송을 기다림
                 n_state = IDLE;
             else if(sample_cnt == 8) //sample_cnt = 8(sample_cnt = 7 이 끝나는 순간)일 때 8번(0 ~ 7)을 check하고 다음 클락에 state 변경 -> middle point
                 n_state = SAMPLE_CNT_RST;
