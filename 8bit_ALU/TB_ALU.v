@@ -1,6 +1,6 @@
 `timesclae 1ns/1ns
 
-module TB_8bit_ALU();
+module TB_ALU();
 
 reg [7:0]         i_a           ;
 reg [7:0]         i_b           ;
