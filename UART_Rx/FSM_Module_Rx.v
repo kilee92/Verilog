@@ -31,19 +31,19 @@ output              o_rx_error          ;
 reg [3:0] state, n_state;
 
 //State parameter
-parameter IDLE              = 4'd0;
-parameter START_CHECK       = 4'd1;
-parameter SAMPLE_CNT_RST    = 4'd2;
-parameter F_WAIT            = 4'd3;
-parameter F_SAMPLE          = 4'd4;
-parameter S_WAIT            = 4'd5;
-parameter S_SAMPLE          = 4'd6;
-parameter T_WAIT            = 4'd7;
-parameter T_SAMPLE          = 4'd8;
-parameter DATA_DECISION     = 4'd9;
-parameter STOP_DECISION     = 4'd10;
-parameter RECEIVE_COMPLETE  = 4'd11;
-parameter RECEIVE_ERROR     = 4'd12;
+localparam IDLE              = 4'd0;
+localparam START_CHECK       = 4'd1;
+localparam SAMPLE_CNT_RST    = 4'd2;
+localparam F_WAIT            = 4'd3;
+localparam F_SAMPLE          = 4'd4;
+localparam S_WAIT            = 4'd5;
+localparam S_SAMPLE          = 4'd6;
+localparam T_WAIT            = 4'd7;
+localparam T_SAMPLE          = 4'd8;
+localparam DATA_DECISION     = 4'd9;
+localparam STOP_DECISION     = 4'd10;
+localparam RECEIVE_COMPLETE  = 4'd11;
+localparam RECEIVE_ERROR     = 4'd12;
 
 //State register
 always @(posedge clk or negedge rst_n) begin
