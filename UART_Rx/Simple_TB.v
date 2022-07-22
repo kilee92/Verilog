@@ -24,7 +24,7 @@ initial `probe_start;
     `probe(clk          );   
     `probe(rst_n        );   
     `probe(i_rx_d       );      
-    //`probe(o_rx_complete);   
+    `probe(o_rx_complete);   
     //`probe(o_rx_error   );   
     `probe(o_rx_d       );   
     `probe(sampling     );   
@@ -44,19 +44,19 @@ initial begin
     #10
 
     rst_n = 1;
-    #20
+    #10
 
     i_rx_d = 0;
-    #360
+    #200 //10(frequency) * 5(sampling) * 4(Division)
 
     i_rx_d = 1;
-    #300 //10(frequency) * 5(sampling) * 6(Division)
+    #200
 
     i_rx_d = 0;
-    #300
+    #200
 
     i_rx_d = 1;
-    #300
+    #1000
 
     $finish;
 end
@@ -129,6 +129,7 @@ module FSM_Module_Rx(
 
     `probe(state);
     `probe(sample_cnt);
+    `probe(bit_cnt);
     
 input               clk                 ;
 input               rst_n               ;
@@ -179,7 +180,7 @@ always @(state or i_rx_d or sampling or sample_cnt or bit_cnt) begin //state, i_
         START_CHECK: begin
             if(sampling == 1 && i_rx_d == 1) //시작 비트(0) sampling 값이 1이 될 경우(Noise가 낄 경우) 다시 IDLE로 상태로 돌아가 새로운 신호 전송을 기다림
                 n_state = IDLE;
-            else if(sample_cnt == 3) //start 비트의 middle point+1 (9번째 sampling)까지 대기
+            else if(sample_cnt == 2) //start 비트의 middle point+1 (9번째 sampling)까지 대기
                 n_state = SAMPLE_CNT_RST;
             else
                 n_state = START_CHECK;
@@ -188,7 +189,7 @@ always @(state or i_rx_d or sampling or sample_cnt or bit_cnt) begin //state, i_
         SAMPLE_CNT_RST: n_state = F_WAIT; //sample_cnt 리셋 -> 이전 data bit의 (middle point+1)일 때 Reset되므로, sample_cnt = 0 일 때 1번 sampling
 
         F_WAIT: begin 
-            if(sample_cnt == 4) //data bit의 middle point-1 (이전 data bit의 middle point에서 부터 15번째 sampling) 까지 대기
+            if(sample_cnt == 2) //data bit의 middle point-1 (이전 data bit의 middle point에서 부터 15번째 sampling) 까지 대기
                 n_state = F_SAMPLE; //sample_cnt = 14 이후 (1clock)
             else
                 n_state = F_WAIT;
@@ -198,7 +199,7 @@ always @(state or i_rx_d or sampling or sample_cnt or bit_cnt) begin //state, i_
 
 
         S_WAIT: begin
-            if(sample_cnt == 5) //data bit의 middle point(이전 data bit의 middle point에서 부터 16번째 sampling) 까지 대기
+            if(sample_cnt == 3) //data bit의 middle point(이전 data bit의 middle point에서 부터 16번째 sampling) 까지 대기
                 n_state = S_SAMPLE; //sample_cnt = 15 이후 (1clock)
             else
                 n_state = S_WAIT;
@@ -207,14 +208,14 @@ always @(state or i_rx_d or sampling or sample_cnt or bit_cnt) begin //state, i_
         S_SAMPLE: n_state = T_WAIT; //data bit의 2번째 sample 저장 (1clock) -> sample_cnt = 15 이후 (2clock)
 
         T_WAIT: begin 
-            if(sample_cnt == 6) //data bit의 middle point+1 (이전 data bit의 middle point에서 부터 17번째 sampling) 까지 대기
+            if(sample_cnt == 4) //data bit의 middle point+1 (이전 data bit의 middle point에서 부터 17번째 sampling) 까지 대기
                 n_state = T_SAMPLE; //sample_cnt = 16 이후 (1clock)
             else
                 n_state = T_WAIT;
         end
 
         T_SAMPLE: begin //data bit의 3번째 sample 저장 (1clock) -> sample_cnt = 16 이후 (2clock)
-            if(bit_cnt == 4'd8) //bit_cnt = 8일 때 stop bit까지 확인 (9번째 bit)
+            if(bit_cnt == 4'd2) //bit_cnt = 8일 때 stop bit까지 확인 (9번째 bit)
                 n_state = STOP_DECISION;
             else //bit_cnt = 7일 때까지 (0 ~ 7 -> 8bit): data bit 저장 상태로 이동 
                 n_state = DATA_DECISION;
@@ -223,7 +224,7 @@ always @(state or i_rx_d or sampling or sample_cnt or bit_cnt) begin //state, i_
         DATA_DECISION: n_state = SAMPLE_CNT_RST; //3개의 sample bit 비교 후 register에 data bit 저장 -> sample_cnt = 16 이후 (3clock)
 
         STOP_DECISION: begin //Stop bit check (complete or error 결정) -> sample_cnt = 16 이후 (3clock)
-            if(catch_bit == 1'b1)
+            if((b0&b1) | (b0&b2) | (b1&b2) == 1'b1)
                 n_state = RECEIVE_COMPLETE;
             else   
                 n_state = RECEIVE_ERROR;
@@ -302,6 +303,7 @@ always @(posedge clk or negedge rst_n) begin
     end
 end
 
+
 //Output logic
 always @(state) begin
     if(state == IDLE) begin
@@ -319,7 +321,7 @@ always @(state) begin
         end
     end
 end
-
+    
 assign o_rx_complete = (state == RECEIVE_COMPLETE) ? 1'b1 : 1'b0;
 assign o_rx_error = (state == RECEIVE_ERROR) ? 1'b1 : 1'b0;
 
@@ -359,7 +361,7 @@ reg [4:0] sampling_reg;
 always @(posedge clk or negedge rst_n) begin
     if(~rst_n)
         sampling_reg <= 0;
-    else if(sampling_reg == 5) //1초에 115200*16개의 Sample 확인(baud rate보다 16빠른 속도)
+    else if(sampling_reg == 4) //1초에 115200*16개의 Sample 확인(baud rate보다 16빠른 속도)
         sampling_reg <= 0;
     else
         sampling_reg <= sampling_reg + 1'b1;
@@ -367,7 +369,7 @@ end
 
 //Output logic
 always @(posedge clk or negedge rst_n) begin
-    if(sampling_reg == 5)
+    if(sampling_reg == 4)
         sampling <= 1;
     else 
         sampling <= 0;
