@@ -25,12 +25,12 @@ initial `probe_start;
     `probe(rst_n        );   
     `probe(i_rx_d       );      
     `probe(o_rx_complete);   
-    //`probe(o_rx_error   );   
+    `probe(o_rx_error   );   
     `probe(o_rx_d       );   
     `probe(sampling     );   
     `probe(catch_bit    );   
     `probe(catch_bit_cnt);   
-    //`probe(shift_rst    );   
+    `probe(shift_rst    );   
 
 //test
 initial begin
