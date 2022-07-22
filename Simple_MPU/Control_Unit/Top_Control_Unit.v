@@ -1,8 +1,3 @@
-//작성자: 이광일
-//설계명: Simple MPU
-//설계 목표: 기존에 설계했던 UART Rx/Tx, ALU를 이용하여 간단한 Microprocessor 설계
-//참고: PC에서부터 데이터를 UART Rx 통해 받아 ALU 연산 이후 UART Tx를 통해 PC로 전송
-
 module Top_Control_Unit(
     clk         ,
     rst_n       ,
