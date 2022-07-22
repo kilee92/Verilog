@@ -50,13 +50,13 @@ initial begin
     #360
 
     i_rx_d = 1;
-    #360
+    #300 //10(frequency) * 5(sampling) * 6(Division)
 
     i_rx_d = 0;
-    #360
+    #300
 
     i_rx_d = 1;
-    #360
+    #300
 
     $finish;
 end
