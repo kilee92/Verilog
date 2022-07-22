@@ -2,11 +2,11 @@
 
 module TB_8bit_ALU();
 
-reg [7:0]         i_a     ;
-reg [7:0]         i_b     ;
-reg [3:0]         i_func  ;
+reg [7:0]         i_a           ;
+reg [7:0]         i_b           ;
+reg [3:0]         i_func        ;
 
-wire [7:0]        o_alu   ;
+wire [7:0]        alu_result    ;
 
 initial begin
     i_a = 8'd7;
@@ -64,10 +64,10 @@ end
 
 //Module instance
 8bit_ALU u0(
-    .i_a     (i_a   ),
-    .i_b     (i_b   ),
-    .i_func  (i_func),
-    .o_alu   (o_alu )
+    .i_a          (i_a   ),
+    .i_b          (i_b   ),
+    .i_func       (i_func),
+    .alu_result   (alu_result )
 
 );
 
