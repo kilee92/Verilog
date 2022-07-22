@@ -63,6 +63,7 @@ always @(state or i_rx_d or sampling or sample_cnt or bit_cnt) begin //state, i_
                 n_state = IDLE;
         end
 
+        //sample_cnt = 0일 때 1번 Sampling (IDLE state에서 1번 sampling하여 START_CHECK state로 이동했기 때문에)
         START_CHECK: begin
             if(sampling == 1 && i_rx_d == 1) //시작 비트(0) sampling 값이 1이 될 경우(Noise가 낄 경우) 다시 IDLE로 상태로 돌아가 새로운 신호 전송을 기다림
                 n_state = IDLE;
@@ -110,7 +111,7 @@ always @(state or i_rx_d or sampling or sample_cnt or bit_cnt) begin //state, i_
         DATA_DECISION: n_state = SAMPLE_CNT_RST; //3개의 sample bit 비교 후 register에 data bit 저장 -> sample_cnt = 16 이후 (3clock)
 
         STOP_DECISION: begin //Stop bit check (complete or error 결정) -> sample_cnt = 16 이후 (3clock)
-            if(catch_bit == 1'b1)
+            if((b0&b1) | (b0&b2) | (b1&b2) == 1'b1)
                 n_state = RECEIVE_COMPLETE;
             else   
                 n_state = RECEIVE_ERROR;
@@ -127,8 +128,7 @@ always @(state or i_rx_d or sampling or sample_cnt or bit_cnt) begin //state, i_
 end
 
 //Sample counter
-//sample_cnt = 0 일 때 1회 sampling 
-//sample_cnt = 1(sample_cnt = 0 이 끝나는 순간) 1번 check
+//Samling 횟수를 세는 counter
 reg [4:0] sample_cnt;
 
 always @(posedge clk or negedge rst_n) begin
@@ -147,6 +147,7 @@ always @(posedge clk or negedge rst_n) begin
 end
 
 //Bit counter
+//Data bit 수를 세는 counter 
 reg [3:0] bit_cnt;
 
 always @(posedge clk or negedge rst_n) begin
@@ -161,6 +162,7 @@ always @(posedge clk or negedge rst_n) begin
 end
 
 //Sample bit register
+//신호의 무결성을 보장하기 위해 1bit 당 3개의 sample을 저장하는 Register
 reg b0, b1, b2;
 
 always @(posedge clk or negedge rst_n) begin
