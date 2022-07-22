@@ -1,4 +1,4 @@
-module ALU_8bit(
+module ALU(
     i_a         ,
     i_b         ,
     i_func      ,
