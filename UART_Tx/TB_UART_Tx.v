@@ -13,9 +13,9 @@ reg [7:0]         i_tx_d          ;
 reg               i_tx_en         ;
 
 wire              o_tx_complete   ;
-wire              o_tx_d
+wire              o_tx_d          ;
 
-always #10 clk = ~clk
+always #10 clk = ~clk;
 
 initial begin
     clk = 0;
@@ -44,7 +44,7 @@ initial begin
     //모든 데이터가 전송되는 시간을 계산하여 run time 동안 대기
     #100000
 
-    $finish
+    $finish;
 end
 
 Top_UART_Tx u0(
