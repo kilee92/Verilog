@@ -36,6 +36,3 @@ end
 assign o_tx_d = d_reg[0];
 
 endmodule
-assign o_tx_d = d_reg[0];
-
-endmodule
