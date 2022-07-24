@@ -33,8 +33,6 @@ wire                sampling            ;
 wire                catch_bit           ;
 wire [3:0]          catch_bit_cnt       ;
 wire                shift_rst           ;
-wire                o_rx_complete       ;
-wire                o_rx_error          ;
 
 
 //module instance
