@@ -45,7 +45,7 @@ BPS_Counter u1(
     .shift_en    (shift_en  ) 
 );
 
-Shift_Register u2(
+Shift_Register_Tx u2(
     .clk         (clk     ),
     .rst_n       (rst_n   ),
     .i_tx_d      (i_tx_d  ),
