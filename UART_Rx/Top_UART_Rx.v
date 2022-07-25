@@ -24,7 +24,7 @@ input               clk                 ;
 input               rst_n               ;
 input               i_rx_d              ;
 
-output reg [7:0]    o_rx_d              ;  
+output [7:0]        o_rx_d              ;  
 output              o_rx_complete       ;
 output              o_rx_error          ; 
 
