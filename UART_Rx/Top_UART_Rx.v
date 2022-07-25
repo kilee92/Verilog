@@ -1,4 +1,3 @@
-
 //작성자: 이광일
 //설계명: UART(Rx)
 //설계 목표: Shift Register를 포함하는 비동기 통신 중 하나인 UART Tx Module 설계 (Baud Rate = 115200)
@@ -37,30 +36,30 @@ wire                shift_rst           ;
 
 //module instance
 FSM_Module_Rx u0(
-    clk                 (clk          ),
-    rst_n               (rst_n        ),
-    i_rx_d              (i_rx_d       ),
-    sampling            (sampling     ),
-    catch_bit           (catch_bit    ),
-    catch_bit_cnt       (catch_bit_cnt),
-    shift_rst           (shift_rst    ),
-    o_rx_complete       (o_rx_complete),
-    o_rx_error          (o_rx_error   ) 
+    .clk                 (clk          ),
+    .rst_n               (rst_n        ),
+    .i_rx_d              (i_rx_d       ),
+    .sampling            (sampling     ),
+    .catch_bit           (catch_bit    ),
+    .catch_bit_cnt       (catch_bit_cnt),
+    .shift_rst           (shift_rst    ),
+    .o_rx_complete       (o_rx_complete),
+    .o_rx_error          (o_rx_error   ) 
 );
 
 Sampling_Counter u1(
-    clk         (clk     ),
-    rst_n       (rst_n   ),
-    sampling    (sampling) 
+    .clk         (clk     ),
+    .rst_n       (rst_n   ),
+    .sampling    (sampling) 
 );
 
 Shift_Register_Rx u2(
-    clk             (clk          ),
-    rst_n           (rst_n        ),
-    shift_rst       (shift_rst    ),
-    catch_bit       (catch_bit    ),
-    catch_bit_cnt   (catch_bit_cnt),
-    o_rx_d          (o_rx_d       ) 
+    .clk             (clk          ),
+    .rst_n           (rst_n        ),
+    .shift_rst       (shift_rst    ),
+    .catch_bit       (catch_bit    ),
+    .catch_bit_cnt   (catch_bit_cnt),
+    .o_rx_d          (o_rx_d       ) 
 );
 
 endmodule
