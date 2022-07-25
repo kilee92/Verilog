@@ -26,7 +26,7 @@ reg [4:0] sampling_reg;
 
 //Sampling count register
 always @(posedge clk or negedge rst_n) begin
-    if(~rst_n)
+    if(!rst_n)
         sampling_reg <= 0;
     else if(sampling_reg == SYS_CLK/(BAUD_RATE*DIVISION) - 1'b1) //1초에 115200*16개의 Sample 확인(baud rate보다 16빠른 속도)
         sampling_reg <= 0;
@@ -36,7 +36,9 @@ end
 
 //Output logic
 always @(posedge clk or negedge rst_n) begin
-    if(sampling_reg == SYS_CLK/(BAUD_RATE*DIVISION) - 1'b1)
+    if(!rst_n)
+        sampling <= 0;
+    else if(sampling_reg == SYS_CLK/(BAUD_RATE*DIVISION) - 1'b1)
         sampling <= 1;
     else 
         sampling <= 0;
