@@ -54,7 +54,7 @@ Sampling_Counter u1(
     sampling    (sampling) 
 );
 
-Shift_Register u2(
+Shift_Register_Rx u2(
     clk             (clk          ),
     rst_n           (rst_n        ),
     shift_rst       (shift_rst    ),
