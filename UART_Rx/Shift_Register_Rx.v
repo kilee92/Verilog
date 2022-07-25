@@ -5,7 +5,7 @@
 //- 데이터 전송 시점을 예측할 수 없기 때문에 1/Baud Rate보다 빠른 주기로 샘플링 하여 시작 비트가 수신되었는지 감지하는 기능을 포함해야함.
 //- 신호선의 무결성을 보장할 수 없으므로, 데이터 비트의 중간 지점 3부분에서 데이터를 샘플링하여 가장 많이 샘플링된 데이터 값을 저장해야함.
 
-module Shift_Register(
+module Shift_Register_Rx(
     clk             ,
     rst_n           ,
     shift_rst       ,
