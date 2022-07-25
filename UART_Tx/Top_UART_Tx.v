@@ -18,7 +18,7 @@ input [7:0]         i_tx_d          ;
 input               i_tx_en         ;
 
 output              o_tx_complete   ;
-output              o_tx_d
+output              o_tx_d          ;
 
 wire                tx_done         ;
 wire                bps_cnt_en      ;
