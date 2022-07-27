@@ -159,7 +159,7 @@ reg [1:0] col_cnt;
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n)
         col_cnt <= 0;
-    else if(matrix_cnt == 2'd2)
+    else if(matrix_cnt == 2'd4) // 3clock(3*3행렬의 3열 3개의 data 접근 시간) + 2clock(임의로 설정) = 5clock(sobel filter total 계산 시간) -> Data를 Read하는데 소요하는 총 시간
         col_cnt <= 0;
     else if(state == RUN)
         col_cnt <= col_cnt + 1;
@@ -179,7 +179,11 @@ always @(posedge clk or negedge rst_n) begin
             addr_cnt_read <= addr_cnt_read + IMAGE_WIDTH; // Current Address 값은 3*3 행렬 중 (1,1) address, Next address 값은 3*3 행렬 중 (2,1) address
         else if(col_cnt == 1)
             addr_cnt_read <= addr_cnt_read + 2*IMAGE_WIDTH; // Current Address 값은 3*3 행렬 중 (2,1) address, Next address 값은 3*3 행렬 중 (3,1) address
-        else //col_cnt == 2
+        else if(col_cnt == 2)
+            addr_cnt_read <= addr_cnt_read; // Current Address 값은 3*3 행렬 중 (3,1) address, Next address 값은 3*3 행렬 중 (3,1) address
+        else if(col_cnt == 3)
+            addr_cnt_read <= addr_cnt_read; // Current Address 값은 3*3 행렬 중 (3,1) address, Next address 값은 3*3 행렬 중 (3,1) address
+        else // col_cnt == 4
             addr_cnt_read <= addr_cnt_read - 2*IMAGE_WIDTH + 1; // Current Address 값은 3*3 행렬 중 (3,1) address, Next address 값은 3*3 행렬 중 (1,2) address
     end else
         addr_cnt_read <= addr_cnt_read;
@@ -251,19 +255,19 @@ always @(posedge clk or negedge reset_n) begin
 	end
 end
 
-//BRAM0에서 3*4행렬 4열의 3개 data를 read하여 저장하기 위해 3clock 지연 시간 필요
-reg [2:0] proc_delay;
+//BRAM0에서 3*4행렬 4열의 3개 data를 read하여 저장하기 위해 5clock 지연 시간 필요
+reg [4:0] proc_delay;
 
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n)
         proc_delay <= 0;
-    else if(proc_delay[2])
-        proc_delay <= {2'b0, valid_read};
+    else if(proc_delay[4])
+        proc_delay <= {4'b0, valid_read};
     else
-        proc_delay <= {proc_delay[1:0], valid_read};
+        proc_delay <= {proc_delay[3:0], valid_read};
 end
 
-//3clock 이후 data shift(4열->3열, 3열->2열, 2열->1열)
+//5clock 이후 data shift (다음 data가 read 되기 전까지) -> proc_delay[4] = 1 일 때 4열->3열, 3열->2열, 2열->1열
 genvar  idx;
 generate
     for (idx = 0; idx < 3; idx = idx + 1) begin :
@@ -272,44 +276,47 @@ generate
                 matrix_data[idx + 3] <= {DATA_WIDTH{1'b0}};
                 matrix_data[idx + 6] <= {DATA_WIDTH{1'b0}};
                 matrix_data[idx + 9] <= {DATA_WIDTH{1'b0}};
-            else if(proc_delay[2])
+            else if(proc_delay[4])
                 matrix_data[idx + 3] <= matrix_data[idx];
                 matrix_data[idx + 6] <= matrix_data[idx + 3];
                 matrix_data[idx + 9] <= matrix_data[idx + 6];
-            else 
-                matrix_data[idx] <= matrix_data[idx];
-                matrix_data[idx + 3] <= matrix_data[idx + 3];
-                matrix_data[idx + 6] <= matrix_data[idx + 6];
+            else;
         end
     end
 endgenerate
 
-//3clock 이후 Sobel mask 적용 및 계산 (Pipeline을 위해 read하는 시간과 Sobel mask 적용 및 계산 시간을 맞춤)
-wire p0,
+//5clock 동안 Sobel mask 계산 (다음 data가 shift 되기 전까지) -> proc_delay[4] = 1 일 때 o_sobel 캡처
+reg [7:0] result;
+wire [7:0] o_sobel
 
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n)
-        cal_result <= 0;
-    else if(cal_delay[2])
-        cal_result <= o_sobel;
+        result <= 0;
+    else if(proc_delay[4])
+        result <= o_sobel;
     else
-        cal_result <= cal_result;
+        result <= result;
 end
 
 
-//Write 동작은 3번의(3*3행렬의 3열이 모두 채워지고 난 후) read, calculation 이후부터 동작해야 하므로 지연 시간 필요
-reg [2:0] init_delay;
+//Write 동작은 3번째 Cycle(Read, Calculation)부터 동작해야 하므로 지연 시간 필요
+reg [5:0] init_delay;
+
+always @(posedge clk or negedge rst_n) begin
+    if(!rst_n)
+        init_delay <= 0;
+    else if(proc_delay[4])
+        init_delay <= {init_delay[4:0], proc_delay[4]};
+    else
+        init_delay <= init_delay;
+end
 
 
-
-assign b1_d1 = cal_result;
-assign b1_ce1 = core_delay[2];
-assign b1_we1 = core_delay[2];
+assign b1_d1 = result;
+assign b1_ce1 = proc_delay[2] && init_delay[5];
+assign b1_we1 = proc_delay[2] && init_delay[5];
 assign b1_addr1 = addr_cnt_write;
 
-output [2:0]                o_state     ;
-
-wire o_sobel
 
 
 
