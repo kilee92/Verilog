@@ -4,10 +4,9 @@ module FSM_Module_Sobel
     parameter ADDR_WIDTH    = 12,
     parameter MEM_SIZE      = 4096 // 2^12 = 4096
 
-    parameter CNT_PIX       = 32,
+    parameter IMAGE_WIDTH   = 279,
+    parameter IMAGE_HEIGHT  = 210,
 
-    parameter IMAGE_W       = 279,
-    parameter IMAGE_H       = 210,
     parameter IMAGE_SIZE    = 279*210,
     parameter R_IMAGE_SIZE  = 277 * 208 //resized image after sobel filter
 )
@@ -154,6 +153,20 @@ end
 reg [ADDR_WIDTH-1:0] addr_cnt_read;
 reg [ADDR_WIDTH-1:0] addr_cnt_write;
 
+//Sobel Mask 적용을 위해 3*3 행렬의 행 순으로 data의 address 값에 접근하여 read
+reg [1:0] col_cnt;
+
+always @(posedge clk or negedge rst_n) begin
+    if(!rst_n)
+        col_cnt <= 0;
+    else if(matrix_cnt == 2'd2)
+        col_cnt <= 0;
+    else if(state == RUN)
+        col_cnt <= col_cnt + 1;
+    else
+        col_cnt <= 0;
+end
+
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n)
         addr_cnt_read <= 0;
@@ -161,9 +174,14 @@ always @(posedge clk or negedge rst_n) begin
         addr_cnt_read <= 0;
     else if(state_read == MOVE)
         addr_cnt_read <= addr_cnt_read + 1;
-    else if(state_read == RUN)
-        addr_cnt_read <= addr_cnt_read + 1;
-    else
+    else if(state_read == RUN) begin
+        if(col_cnt == 0)
+            addr_cnt_read <= addr_cnt_read + IMAGE_WIDTH; // Current Address 값은 3*3 행렬 중 (1,1) address, Next address 값은 3*3 행렬 중 (2,1) address
+        else if(col_cnt == 1)
+            addr_cnt_read <= addr_cnt_read + 2*IMAGE_WIDTH; // Current Address 값은 3*3 행렬 중 (2,1) address, Next address 값은 3*3 행렬 중 (3,1) address
+        else //col_cnt == 2
+            addr_cnt_read <= addr_cnt_read - 2*IMAGE_WIDTH + 1; // Current Address 값은 3*3 행렬 중 (3,1) address, Next address 값은 3*3 행렬 중 (1,2) address
+    end else
         addr_cnt_read <= addr_cnt_read;
 end
 
@@ -174,7 +192,7 @@ always @(posedge clk or negedge rst_n) begin
         addr_cnt_write <= 0;
     else if(state_write == MOVE)
         addr_cnt_write <= addr_cnt_write + 1;
-    else if(state_write == RUN)
+    else if((state_write == RUN) && b1_we1)
         addr_cnt_write <= addr_cnt_write + 1;
     else
         addr_cnt_write <= addr_cnt_write;
@@ -218,15 +236,80 @@ always @(posedge clk or negedge rst_n) begin
         valid_read <= o_read;
 end
 
+//BRAM0에서 3*4행렬 4열의 3개 data를 read하여 저장하는 단계
+reg [DATA_WIDTH-1:0] matrix_data [11:0];
 
-output [DATA_WIDTH-1:0]     b1_d1       ;
-output                      b1_ce1      ;
-output                      b1_we1      ;
-output [ADDR_WIDTH-1:0]     b1_addr1    ;
+integer i;
+always @(posedge clk or negedge reset_n) begin
+    if(!rst_n) begin
+        matrix_data[0] <= {DATA_WIDTH{1'b0}};
+        matrix_data[1] <= {DATA_WIDTH{1'b0}};
+        matrix_data[2] <= {DATA_WIDTH{1'b0}};
+    end else if(valid_read) begin
+        for(i = 0; i < 3; i = i + 1)
+		    matrix_data[i] <= b0_q1; // read data
+	end
+end
+
+//BRAM0에서 3*4행렬 4열의 3개 data를 read하여 저장하기 위해 3clock 지연 시간 필요
+reg [2:0] proc_delay;
+
+always @(posedge clk or negedge rst_n) begin
+    if(!rst_n)
+        proc_delay <= 0;
+    else if(proc_delay[2])
+        proc_delay <= {2'b0, valid_read};
+    else
+        proc_delay <= {proc_delay[1:0], valid_read};
+end
+
+//3clock 이후 data shift(4열->3열, 3열->2열, 2열->1열)
+genvar  idx;
+generate
+    for (idx = 0; idx < 3; idx = idx + 1) begin :
+        always @(posedge clk or negedge reset_n) begin
+            if(!rst_n)
+                matrix_data[idx + 3] <= {DATA_WIDTH{1'b0}};
+                matrix_data[idx + 6] <= {DATA_WIDTH{1'b0}};
+                matrix_data[idx + 9] <= {DATA_WIDTH{1'b0}};
+            else if(proc_delay[2])
+                matrix_data[idx + 3] <= matrix_data[idx];
+                matrix_data[idx + 6] <= matrix_data[idx + 3];
+                matrix_data[idx + 9] <= matrix_data[idx + 6];
+            else 
+                matrix_data[idx] <= matrix_data[idx];
+                matrix_data[idx + 3] <= matrix_data[idx + 3];
+                matrix_data[idx + 6] <= matrix_data[idx + 6];
+        end
+    end
+endgenerate
+
+//3clock 이후 Sobel mask 적용 및 계산 (Pipeline을 위해 read하는 시간과 Sobel mask 적용 및 계산 시간을 맞춤)
+wire p0,
+
+always @(posedge clk or negedge rst_n) begin
+    if(!rst_n)
+        cal_result <= 0;
+    else if(cal_delay[2])
+        cal_result <= o_sobel;
+    else
+        cal_result <= cal_result;
+end
+
+
+//Write 동작은 3번의(3*3행렬의 3열이 모두 채워지고 난 후) read, calculation 이후부터 동작해야 하므로 지연 시간 필요
+reg [2:0] init_delay;
+
+
+
+assign b1_d1 = cal_result;
+assign b1_ce1 = core_delay[2];
+assign b1_we1 = core_delay[2];
+assign b1_addr1 = addr_cnt_write;
 
 output [2:0]                o_state     ;
 
-
+wire o_sobel
 
 
 
