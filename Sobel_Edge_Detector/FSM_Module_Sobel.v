@@ -10,7 +10,7 @@ module FSM_Module_Sobel
 (
     clk         ,
     rst_n       ,
-    i_complete  ,
+    i_en        ,
     i_num_cnt   ,
     i_run       ,
     b0_d1       ,
@@ -23,12 +23,15 @@ module FSM_Module_Sobel
     b1_we1      ,
     b1_addr1    ,
     b1_q1       ,
-    o_state      
+    o_idle      ,
+    o_read      ,
+    o_write     ,
+    o_done       
 );
 
 input                       clk         ;
 input                       rst_n       ;
-input                       i_complete  ; //BRAM0에 1frame data 저장 완료
+input                       i_en  ; //BRAM0에 1frame data 저장 완료
 input [ADDR_WIDTH-1:0]      i_num_cnt   ; //BRAM0에 저장 되어 있는 1frame data의 Address Width
 input                       i_run       ; //Sobel Filter 적용
 
@@ -85,7 +88,7 @@ wire write_done;
 always @(*) begin
     case (state_read)
         IDLE: begin 
-            if(i_complete) begin
+            if(i_en) begin
                 if(i_run)
                     n_state_read = RUN;
                 else
@@ -117,7 +120,7 @@ end
 always @(*) begin
     case (state_write)
         IDLE: begin 
-            if(i_complete) begin
+            if(i_en) begin
                 if(i_run)
                     n_state_write = RUN;
                 else
@@ -210,7 +213,7 @@ reg [ADDR_WIDTH-1:0] num_cnt;
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n)
         num_cnt <= 0;
-    else if(i_complete)
+    else if(i_en)
         num_cnt <= i_num_cnt;
     else
         num_cnt <= num_cnt;
