@@ -349,4 +349,16 @@ assign b1_we1 = move_core_delay[5] || run_core_delay[5];
 assign b1_d1 = move_core_delay[5]*move_data[5] + run_core_delay[5]*o_sobel;
 
 // IMAGE의 Edge 부분 축소 IMAGE의 SIZE는 (IMGAE_WIDTH - 2) * (IMAGE_HEIGHT - 2)
+
+Sobel_Mask u0(
+    .p0      (p0     ),
+    .p1      (p1     ),
+    .p2      (p2     ),
+    .p3      (p3     ),
+    .p5      (p5     ),
+    .p6      (p6     ),
+    .p7      (p7     ),
+    .p8      (p8     ),
+    .o_sobel (o_sobel) 
+);
 endmodule
