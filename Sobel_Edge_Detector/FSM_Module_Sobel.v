@@ -2,10 +2,10 @@ module FSM_Module_Sobel
 #(
     parameter DATA_WIDTH    = 8,
     parameter ADDR_WIDTH    = 12,
-    parameter MEM_SIZE      = 4096 // 2^12 = 4096
+    parameter MEM_SIZE      = 4096, // 2^12 = 4096
 
     parameter IMAGE_WIDTH   = 100,
-    parameter IMAGE_HEIGHT  = 100,
+    parameter IMAGE_HEIGHT  = 100
 )
 (
     clk         ,
@@ -94,7 +94,7 @@ always @(*) begin
                 else
                     n_state_read = MOVE;
             end else
-                n_state = IDLE;
+                n_state_read = IDLE;
         end
 
         MOVE: begin
@@ -126,7 +126,7 @@ always @(*) begin
                 else
                     n_state_write = MOVE;
             end else
-                n_state = IDLE;
+                n_state_write = IDLE;
         end
 
         MOVE: begin
@@ -160,9 +160,9 @@ reg [1:0] col_cnt;
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n)
         col_cnt <= 0;
-    else if(matrix_cnt == 2'd2) // 3clock(3*3행렬의 3열 3개의 data 접근 시간) + 2clock(임의로 설정) = 5clock(Data를 Read하는데 소요하는 총 시간) -> Pipeline 적용을 위해 Sobel mask 계산 시간(5clock - 임의로 설정)과 동일하게 맞춤
+    else if(col_cnt == 2'd2) //3행씩 접근
         col_cnt <= 0;
-    else if(state == RUN)
+    else if(n_state_read == RUN)
         col_cnt <= col_cnt + 1;
     else
         col_cnt <= 0;
@@ -187,13 +187,13 @@ always @(posedge clk or negedge rst_n) begin
 end
 
 always @(posedge clk or negedge rst_n) begin
-    if(!rst_n)
+    if(!rst_n) begin
         addr_cnt_write <= 0;
         addr_cnt_write_run <= 0;
-    else if(state_write == DONE)
+    end else if(state_write == DONE) begin
         addr_cnt_write <= 0;
         addr_cnt_write_run <= 0;
-    else if((state_write == MOVE) && b1_we1)
+    end else if((state_write == MOVE) && b1_we1)
         addr_cnt_write <= addr_cnt_write + 1;
     else if((state_write == RUN) && b1_we1) begin //Sobel mask 적용시 매 IMAGE_WIDTH 마다 첫 2번의 b1_d1 data는 유효하지 않음 (3*3행열의 2,3열 data만 채워져 있음)
         addr_cnt_write_run <= addr_cnt_write_run + 1;
@@ -220,8 +220,8 @@ always @(posedge clk or negedge rst_n) begin
 end
 
 //Output Logic
-assign read_done = (addr_cnt_read == num_cnt) && o_read// o_read   = (state_read == MOVE) || (state_read == RUN)
-assign write_done = (addr_cnt_write == num_cnt) && o_write // o_write  = (state_write == MOVE) || (state_write == RUN)
+assign read_done = (addr_cnt_read == num_cnt) && o_read;// o_read   = (state_read == MOVE) || (state_read == RUN)
+assign write_done = (addr_cnt_write == num_cnt) && o_write; // o_write  = (state_write == MOVE) || (state_write == RUN)
 
 assign o_idle   = (state_read == IDLE) && (state_write == IDLE);
 assign o_read   = (state_read == MOVE) || (state_read == RUN);
@@ -229,8 +229,8 @@ assign o_write  = (state_write == MOVE) || (state_write == RUN);
 assign o_done   = (state_read == DONE) && (state_write == DONE);
 
 //BRAM0 Output Logic
-assign b0_d1       = {DATA_WIDTH{1'b}}; // No use
-assign b0_ce1      = o_read // o_read   = (state_read == MOVE) || (state_read == RUN)
+assign b0_d1       = {DATA_WIDTH{1'b1}}; // No use
+assign b0_ce1      = o_read; // o_read   = (state_read == MOVE) || (state_read == RUN)
 assign b0_we1      = 1'b0; //FSM은 BRAM0로 부터 읽기(Read)만 사용
 assign b0_addr1    = addr_cnt_read;
 
@@ -252,16 +252,16 @@ reg [5:0] move_core_delay;
 reg [5:0] run_core_delay; 
 
 always @(posedge clk or negedge rst_n) begin
-    if(!rst_n)
+    if(!rst_n) begin
         move_core_delay <= 0;
         run_core_delay <= 0;
-    else if(state == MOVE)
+    end else if(n_state_read == MOVE)
         move_core_delay <= {move_core_delay[4:0], valid_read};
-    else if(state == RUN)
+    else if(n_state_read == RUN)
         run_core_delay <= {run_core_delay[4:0], valid_read};
     else begin
-        move_core_delay <= {move_core_delay[4:0], 0};
-        run_core_delay <= {move_core_delay[4:0], 0};
+        move_core_delay <= {move_core_delay[4:0], 1'b1};
+        run_core_delay <= {run_core_delay[4:0], 1'b1};
     end
 end
 
@@ -271,7 +271,7 @@ end
 reg [DATA_WIDTH-1:0] move_data [5:0];
 reg [DATA_WIDTH-1:0] run_data [11:0];
 
-always @(posedge clk or negedge reset_n) begin
+always @(posedge clk or negedge rst_n) begin
     if(!rst_n) begin
         move_data[0] <= {DATA_WIDTH{1'b0}};
         run_data[0] <= {DATA_WIDTH{1'b0}};
@@ -301,11 +301,11 @@ genvar idx_run;
 
 generate
     for (idx_move = 0; idx_move < 5; idx_move = idx_move + 1) begin : gen_move_delay
-        always @(posedge clk or negedge reset_n) begin
+        always @(posedge clk or negedge rst_n) begin
             if(!rst_n)
                 move_data[idx_move + 1] <= {DATA_WIDTH{1'b0}};
             else if(|move_core_delay)
-                move_data[idx_move + 1] <= move_data[idx_move]
+                move_data[idx_move + 1] <= move_data[idx_move];
             else;
         end
     end
@@ -313,16 +313,17 @@ endgenerate
 
 generate
     for (idx_run = 0; idx_run < 3; idx_run = idx_run + 1) begin : gen_run_delay
-        always @(posedge clk or negedge reset_n) begin
+        always @(posedge clk or negedge rst_n) begin
             if(!rst_n) begin
                 run_data[idx_run + 3] <= {DATA_WIDTH{1'b0}}; //3열
                 run_data[idx_run + 6] <= {DATA_WIDTH{1'b0}}; //2열
                 run_data[idx_run + 9] <= {DATA_WIDTH{1'b0}}; //1열
-            end else if(core_delay[3]) begin //001111(4cycle)
-                if(state_read == RUN)
-                run_data[idx_run + 3] <= matrix_data[idx_run];
-                run_data[idx_run + 6] <= matrix_data[idx_run + 3];
-                run_data[idx_run + 9] <= matrix_data[idx_run + 6];
+            end else if(run_core_delay[3]) begin //001111(4cycle)
+                if(state_read == RUN) begin
+                run_data[idx_run + 3] <= run_data[idx_run];
+                run_data[idx_run + 6] <= run_data[idx_run + 3];
+                run_data[idx_run + 9] <= run_data[idx_run + 6];
+                end else;
             end else;
         end
     end
