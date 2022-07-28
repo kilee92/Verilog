@@ -6,9 +6,6 @@ module FSM_Module_Sobel
 
     parameter IMAGE_WIDTH   = 100,
     parameter IMAGE_HEIGHT  = 100,
-
-    parameter IMAGE_SIZE    = (IMAGE_WIDTH) * (IMAGE_HEIGHT-2)
-    parameter R_IMAGE_SIZE  = 277 * 208 //resized image after sobel filter
 )
 (
     clk         ,
