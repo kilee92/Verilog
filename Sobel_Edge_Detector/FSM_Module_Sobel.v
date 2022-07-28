@@ -4,10 +4,10 @@ module FSM_Module_Sobel
     parameter ADDR_WIDTH    = 12,
     parameter MEM_SIZE      = 4096 // 2^12 = 4096
 
-    parameter IMAGE_WIDTH   = 279,
-    parameter IMAGE_HEIGHT  = 210,
+    parameter IMAGE_WIDTH   = 100,
+    parameter IMAGE_HEIGHT  = 100,
 
-    parameter IMAGE_SIZE    = 279*210,
+    parameter IMAGE_SIZE    = (IMAGE_WIDTH) * (IMAGE_HEIGHT-2)
     parameter R_IMAGE_SIZE  = 277 * 208 //resized image after sobel filter
 )
 (
@@ -152,6 +152,7 @@ end
 //Address Counter
 reg [ADDR_WIDTH-1:0] addr_cnt_read;
 reg [ADDR_WIDTH-1:0] addr_cnt_write;
+reg [ADDR_WIDTH-1:0] addr_cnt_write_run;
 
 //Sobel Mask 적용을 위해 3*3 행렬의 행 순으로 data address 값에 접근하여 read
 reg [1:0] col_cnt;
@@ -188,13 +189,21 @@ end
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n)
         addr_cnt_write <= 0;
+        addr_cnt_write_run <= 0;
     else if(state_write == DONE)
         addr_cnt_write <= 0;
+        addr_cnt_write_run <= 0;
     else if((state_write == MOVE) && b1_we1)
         addr_cnt_write <= addr_cnt_write + 1;
-    else if((state_write == RUN) && b1_we1)
-        addr_cnt_write <= addr_cnt_write + 1;
-    else
+    else if((state_write == RUN) && b1_we1) begin //Sobel mask 적용시 매 IMAGE_WIDTH 마다 첫 2번의 b1_d1 data는 유효하지 않음 (3*3행열의 2,3열 data만 채워져 있음)
+        addr_cnt_write_run <= addr_cnt_write_run + 1;
+            if(addr_cnt_write_run % IMAGE_WIDTH == 0)
+                addr_cnt_write <= addr_cnt_write;
+            else if(addr_cnt_write_run % IMAGE_WIDTH == 1)
+                addr_cnt_write <= addr_cnt_write;
+            else
+                addr_cnt_write <= addr_cnt_write + 1;
+    end else
         addr_cnt_write <= addr_cnt_write;
 end
 
@@ -342,5 +351,5 @@ assign b1_ce1 = move_core_delay[5] || run_core_delay[5];
 assign b1_we1 = move_core_delay[5] || run_core_delay[5];
 assign b1_d1 = move_core_delay[5]*move_data[5] + run_core_delay[5]*o_sobel;
 
-//(RUN) 매 IMAGE_WIDTH 마다 첫 2번의 b1_d1 data는 유효하지 않음 (3*3행열의 2,3열 data만 채워져 있음) + IMAGE의 Edge 부분의 축소되므로 Resizing이 필요
+// IMAGE의 Edge 부분 축소 IMAGE의 SIZE는 (IMGAE_WIDTH - 2) * (IMAGE_HEIGHT - 2)
 endmodule
