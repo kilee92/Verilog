@@ -2,17 +2,17 @@ module Top_Sobel_Edge_Detect
 #(
     parameter DATA_WIDTH    = 8,
     parameter ADDR_WIDTH    = 12,
-    parameter MEM_SIZE      = 4096 // 2^12 = 4096
+    parameter MEM_SIZE      = 4096, // 2^12 = 4096
 
     parameter IMAGE_WIDTH   = 100,
-    parameter IMAGE_HEIGHT  = 100,
+    parameter IMAGE_HEIGHT  = 100
 )
 (
-    input                       clk         ;
-    input                       rst_n       ;
-    input                       i_en        ;
-    input [ADDR_WIDTH-1:0]      i_num_cnt   ;
-    input                       i_run       ;
+    input                       clk         ,
+    input                       rst_n       ,
+    input                       i_en        ,
+    input [ADDR_WIDTH-1:0]      i_num_cnt   ,
+    input                       i_run       ,
 
     output                      o_idle      ,
     output                      o_read      ,
