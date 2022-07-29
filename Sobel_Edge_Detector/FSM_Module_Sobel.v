@@ -2,7 +2,7 @@ module FSM_Module_Sobel
 #(
     parameter DATA_WIDTH    = 8,
     parameter ADDR_WIDTH    = 16,
-    parameter MEM_SIZE      = 65536, // 2^16 = 4096
+    parameter MEM_SIZE      = 65536, // 2^16
 
     parameter IMAGE_WIDTH   = 100,
     parameter IMAGE_HEIGHT  = 100
@@ -266,8 +266,8 @@ always @(posedge clk or negedge rst_n) begin
 end
 
 //Read data capture
-//(MOVE) - BRAM0에서 read한 data를 shift register에 capture (1cycle)
-//(RUN) - BRAM0에서 read한 data(data1, data2, data3)를 shift register[0],[1],[2](3*4행렬의 4열)에 capture (1~3cycle)
+//(MOVE) - BRAM0에서 read한 data를 shift register에 capture (0cycle)
+//(RUN) - BRAM0에서 read한 data(data1, data2, data3)를 shift register[0],[1],[2](3*4행렬의 4열)에 capture (0~2cycle)
 reg [DATA_WIDTH-1:0] move_data [5:0];
 reg [DATA_WIDTH-1:0] run_data [11:0];
 
@@ -278,13 +278,10 @@ always @(posedge clk or negedge rst_n) begin
         run_data[1] <= {DATA_WIDTH{1'b0}};
         run_data[2] <= {DATA_WIDTH{1'b0}};
     end else if(valid_read) begin
-        if(state_read == MOVE)
-            move_data[0] <= b0_q1;
-        else if(state_read == RUN) begin
-		    run_data[0] <= b0_q1; // read data
-            run_data[1] <= run_data[0];
-            run_data[2] <= run_data[1];
-        end else;
+        move_data[0] <= b0_q1;
+		run_data[0] <= b0_q1; // read data
+        run_data[1] <= run_data[0];
+        run_data[2] <= run_data[1];
     end else begin
         move_data[0] <= {DATA_WIDTH{1'b0}};
         run_data[0] <= {DATA_WIDTH{1'b0}};
@@ -294,8 +291,8 @@ always @(posedge clk or negedge rst_n) begin
 end
 
 //Capture data shift
-//(MOVE) data shift (2~5cycle)
-//(RUN) 행열(4열->3열, 3열->2열, 2열->1열) shift (4cycle)
+//(MOVE) data shift (1~5cycle)
+//(RUN) 행열(4열->3열, 3열->2열, 2열->1열) shift (3cycle)
 genvar idx_move;
 genvar idx_run;
 
@@ -330,7 +327,7 @@ generate
 endgenerate
 
 //Shift 된 행열의 ALU
-//(RUN) 행열 shift 이후 4열을 제외한 3*3 행열 sobel mask 계산 (5cycle)
+//(RUN) 행열 shift 이후 4열을 제외한 3*3 행열 sobel mask 계산 (4cycle)
 wire [7:0] p0, p1, p2, p3, p4, p5, p6, p7, p8;
 wire [7:0] o_sobel;
 
