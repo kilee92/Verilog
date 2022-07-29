@@ -1,8 +1,8 @@
 module FSM_Module_Sobel
 #(
     parameter DATA_WIDTH    = 8,
-    parameter ADDR_WIDTH    = 12,
-    parameter MEM_SIZE      = 4096, // 2^12 = 4096
+    parameter ADDR_WIDTH    = 16,
+    parameter MEM_SIZE      = 65536, // 2^16 = 4096
 
     parameter IMAGE_WIDTH   = 100,
     parameter IMAGE_HEIGHT  = 100
@@ -220,13 +220,13 @@ always @(posedge clk or negedge rst_n) begin
 end
 
 //Output Logic
-assign read_done = (addr_cnt_read == num_cnt) && o_read;// o_read   = (state_read == MOVE) || (state_read == RUN)
-assign write_done = (addr_cnt_write == num_cnt) && o_write; // o_write  = (state_write == MOVE) || (state_write == RUN)
+assign read_done = (addr_cnt_read == num_cnt-1) && o_read;// o_read   = (state_read == MOVE) || (state_read == RUN)
+assign write_done = (addr_cnt_write == num_cnt-1) && o_write; // o_write  = (state_write == MOVE) || (state_write == RUN)
 
 assign o_idle   = (state_read == IDLE) && (state_write == IDLE);
 assign o_read   = (state_read == MOVE) || (state_read == RUN);
 assign o_write  = (state_write == MOVE) || (state_write == RUN);
-assign o_done   = (state_read == DONE) && (state_write == DONE);
+assign o_done   = state_write == DONE; //항상 write가 더 늦게 끝남
 
 //BRAM0 Output Logic
 assign b0_d1       = {DATA_WIDTH{1'b1}}; // No use
@@ -255,13 +255,13 @@ always @(posedge clk or negedge rst_n) begin
     if(!rst_n) begin
         move_core_delay <= 0;
         run_core_delay <= 0;
-    end else if(n_state_read == MOVE)
+    end else if(state_read == MOVE)
         move_core_delay <= {move_core_delay[4:0], valid_read};
-    else if(n_state_read == RUN)
+    else if(state_read == RUN)
         run_core_delay <= {run_core_delay[4:0], valid_read};
     else begin
-        move_core_delay <= {move_core_delay[4:0], 1'b1};
-        run_core_delay <= {run_core_delay[4:0], 1'b1};
+        move_core_delay <= {move_core_delay[4:0], 1'b0};
+        run_core_delay <= {run_core_delay[4:0], 1'b0};
     end
 end
 
