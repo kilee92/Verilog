@@ -49,6 +49,8 @@ wire [DATA_WIDTH:0]     b1_q1       ;
 
 	`probe(clk);        // Probe signal "clk"
     `probe(rst_n);
+    `probe(i_en);
+    `probe(i_run);
     
 	// A testbench
 integer i;
@@ -83,7 +85,8 @@ initial begin
         b0_d0       = i+1;
         b0_addr0    = i;
     end
-
+	
+    /*
     //Check IDLE state
     wait(o_idle);
 
@@ -94,7 +97,7 @@ initial begin
     i_en = 0;
     
     wait(o_done);
-		    
+	
     //BRAM1에 저장된 Image data 읽기
     for(i = 0; i < i_num_cnt; i = i + 1) begin
         @(posedge clk)
@@ -102,20 +105,22 @@ initial begin
         b1_we0      = 0;
         b1_addr0    = i;
     end
-	/*
-    #50
-
+	
+    */
     //Check IDLE state
     wait(o_idle);
-
     //Start Image data run
-    i_en = 1;
     i_run = 1;
     #10
-
+    i_en = 1;
+    #20
     i_en = 0;
+    
+    #1000
+    /*
     wait(o_done);
-
+    
+    
     //BRAM1에 저장된 Image data 읽기
     for(i = 0; i < i_num_cnt; i = i + 1) begin
         @(posedge clk)
@@ -223,7 +228,7 @@ module DPBRAM_Test
     d1      , 
     q1       
 );
-    
+   
 input                   clk;
 input                   ce0, we0, ce1, we1;
 input [ADDR_WIDTH-1:0]  addr0, addr1;
@@ -298,23 +303,22 @@ module FSM_Module_Sobel
 );
     
     `probe(state_read);
+    `probe(state_write);
     `probe(addr_cnt_read);
     `probe(b0_q1);
     `probe(o_read);
     `probe(valid_read);
-    `probe(move_core_delay[0]);
-    `probe(move_core_delay[1]);
-    `probe(move_core_delay[2]);
-    `probe(move_core_delay[3]);
-    `probe(move_core_delay[4]);
-	`probe(move_core_delay[5]);
+    `probe(run_core_delay[0]);
+    `probe(run_core_delay[1]);
+    `probe(run_core_delay[2]);
+    `probe(run_core_delay[3]);
+    `probe(run_core_delay[4]);
+    `probe(run_core_delay[5]);
+    `probe(b1_addr1);
     `probe(b1_d1);
-    `probe(move_data[0]);
-    `probe(move_data[1]);
-    `probe(move_data[2]);
-    `probe(move_data[3]);
-    `probe(move_data[4]);
-    `probe(move_data[5]);
+    `probe(run_data[0]);
+    `probe(run_data[1]);
+    `probe(run_data[2]);
 
 input                       clk         ;
 input                       rst_n       ;
@@ -342,14 +346,15 @@ output                      o_write     ;
 output                      o_done      ;
 
 //Pipeline 적용을 위해 2가지(Read/Write) FSM 사용
-reg [1:0] state_read, n_state_read;
-reg [1:0] state_write, n_state_write;
+reg [2:0] state_read, n_state_read;
+reg [2:0] state_write, n_state_write;
 
 //State Parameter
-localparam IDLE     = 2'b00;
-localparam MOVE     = 2'b01; //Sobel Mask 적용 안하여 데이터 이동(단순 데이터 이동)
-localparam RUN      = 2'b10; //Sobel Mask 적용 하여 데이터 이동
-localparam DONE     = 2'b11;
+localparam IDLE         = 3'b000;
+localparam MOVE         = 3'b001; //Sobel Mask 적용 안하여 데이터 이동(단순 데이터 이동)
+localparam MOVE_DONE    = 3'b010;
+localparam RUN          = 3'b011; //Sobel Mask 적용 하여 데이터 이동
+localparam RUN_DONE     = 3'b100;
 
 //State Register
 always @(posedge clk or negedge rst_n) begin
@@ -386,19 +391,20 @@ wire write_done;
 
         MOVE: begin
             if(read_done)
-                n_state_read = DONE;
+                n_state_read = MOVE_DONE;
             else   
                 n_state_read = MOVE;
         end
                 
         RUN: begin
             if(read_done)
-                n_state_read = DONE;
+                n_state_read = RUN_DONE;
             else   
                 n_state_read = RUN;
         end
 
-        DONE: n_state_read = IDLE;
+        MOVE_DONE: n_state_read = IDLE;
+        RUN_DONE: n_state_read = IDLE;
 
         default: n_state_read = IDLE;
     endcase
@@ -418,19 +424,20 @@ always @(*) begin
 
         MOVE: begin
             if(write_done)
-                n_state_write = DONE;
+                n_state_write = MOVE_DONE;
             else   
                 n_state_write = MOVE;
         end
                 
         RUN: begin
             if(write_done)
-                n_state_write = DONE;
+                n_state_write = RUN_DONE;
             else   
                 n_state_write = RUN;
         end
 
-        DONE: n_state_write = IDLE;
+        MOVE_DONE: n_state_write = IDLE;
+        RUN_DONE: n_state_write = IDLE;
 
         default: n_state_write = IDLE;
     endcase
@@ -449,7 +456,7 @@ always @(posedge clk or negedge rst_n) begin
         col_cnt <= 0;
     else if(col_cnt == 2'd2) //3행씩 접근
         col_cnt <= 0;
-    else if(n_state_read == RUN)
+    else if(state_read == RUN)
         col_cnt <= col_cnt + 1;
     else
         col_cnt <= 0;
@@ -458,7 +465,7 @@ end
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n)
         addr_cnt_read <= 0;
-    else if(state_read == DONE)
+    else if((state_read == MOVE_DONE) || (state_read == RUN_DONE))
         addr_cnt_read <= 0;
     else if(state_read == MOVE)
         addr_cnt_read <= addr_cnt_read + 1;
@@ -466,7 +473,7 @@ always @(posedge clk or negedge rst_n) begin
         if(col_cnt == 0)
             addr_cnt_read <= addr_cnt_read + IMAGE_WIDTH; // Current Address 값은 3*3 행렬 중 (1,1) address, Next address 값은 3*3 행렬 중 (1,1) address
         else if(col_cnt == 1)
-            addr_cnt_read <= addr_cnt_read + 2*IMAGE_WIDTH; // Current Address 값은 3*3 행렬 중 (1,1) address, Next address 값은 3*3 행렬 중 (1,1) address
+            addr_cnt_read <= addr_cnt_read + IMAGE_WIDTH; // Current Address 값은 3*3 행렬 중 (1,1) address, Next address 값은 3*3 행렬 중 (1,1) address
         else // col_cnt == 2
             addr_cnt_read <= addr_cnt_read - 2*IMAGE_WIDTH + 1; // Current Address 값은 3*3 행렬 중 (3,1) address, Next address 값은 3*3 행렬 중 (1,2) address
     end else
@@ -477,7 +484,7 @@ always @(posedge clk or negedge rst_n) begin
     if(!rst_n) begin
         addr_cnt_write <= 0;
         addr_cnt_write_run <= 0;
-    end else if(state_write == DONE) begin
+    end else if((state_write == MOVE_DONE) || (state_write == RUN_DONE)) begin
         addr_cnt_write <= 0;
         addr_cnt_write_run <= 0;
     end else if((state_write == MOVE) && b1_we1)
@@ -513,7 +520,7 @@ assign write_done = (addr_cnt_write == num_cnt-1) && o_write; // o_write  = (sta
 assign o_idle   = (state_read == IDLE) && (state_write == IDLE);
 assign o_read   = (state_read == MOVE) || (state_read == RUN);
 assign o_write  = (state_write == MOVE) || (state_write == RUN);
-assign o_done   = state_write == DONE;
+assign o_done   = (state_write == MOVE_DONE) || (state_write == RUN_DONE);
 
 //BRAM0 Output Logic
 assign b0_d1       = {DATA_WIDTH{1'b1}}; // No use
@@ -543,8 +550,10 @@ always @(posedge clk or negedge rst_n) begin
         move_core_delay <= 0;
         run_core_delay <= 0;
     end else if(valid_read) begin
-        move_core_delay <= {move_core_delay[4:0], valid_read};
-        run_core_delay <= {run_core_delay[4:0], valid_read};
+        if((state_read == MOVE) || (state_read == MOVE_DONE))
+            move_core_delay <= {move_core_delay[4:0], valid_read};
+        else if((state_read == RUN) || (state_read == RUN_DONE))
+            run_core_delay <= {run_core_delay[4:0], valid_read};
     end else begin
         move_core_delay <= {move_core_delay[4:0], 1'b0};
         run_core_delay <= {run_core_delay[4:0], 1'b0};
