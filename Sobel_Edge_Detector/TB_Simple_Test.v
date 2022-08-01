@@ -343,10 +343,10 @@ output [ADDR_WIDTH-1:0]     b0_addr1    ;
 
 input [DATA_WIDTH-1:0]      b0_q1       ;
 
-output reg[DATA_WIDTH-1:0]     b1_d1       ;
+output [DATA_WIDTH-1:0]     b1_d1       ;
 output                      b1_ce1      ;
 output                      b1_we1      ;
-output [ADDR_WIDTH-1:0]     b1_addr1    ;
+output reg [ADDR_WIDTH-1:0] b1_addr1    ;
 
 input [DATA_WIDTH-1:0]      b1_q1       ; //No use
 
@@ -536,7 +536,7 @@ assign write_done = (addr_cnt_write == num_cnt-1) && o_write; // o_write  = (sta
 
 //Read data capture
 reg [DATA_WIDTH-1:0] move_data;
-reg [DATA_WIDTH-1:0] sobel_data [11:0];
+reg [DATA_WIDTH-1:0] sobel_data [8:0];
 
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n) begin
@@ -588,13 +588,11 @@ generate
     for (idx = 0; idx < 3; idx = idx + 1) begin : gen_sobel_shift
         always @(posedge clk or negedge rst_n) begin
             if(!rst_n) begin
-                sobel_data[idx + 3] <= {DATA_WIDTH{1'b0}}; //3열
-                sobel_data[idx + 6] <= {DATA_WIDTH{1'b0}}; //2열
-                sobel_data[idx + 9] <= {DATA_WIDTH{1'b0}}; //1열
+                sobel_data[idx + 3] <= {DATA_WIDTH{1'b0}}; 
+                sobel_data[idx + 6] <= {DATA_WIDTH{1'b0}}; 
             end else if(sobel_core_delay[2]) begin
                 sobel_data[idx + 3] <= sobel_data[idx];
                 sobel_data[idx + 6] <= sobel_data[idx + 3];
-                sobel_data[idx + 9] <= sobel_data[idx + 6];
             end else;
         end
     end
@@ -604,27 +602,24 @@ endgenerate
 wire [7:0] p0, p1, p2, p3, p4, p5, p6, p7, p8;
 wire [7:0] o_sobel;
 
-assign p0 = sobel_data[11];
-assign p1 = sobel_data[8];
-assign p2 = sobel_data[5];
-assign p3 = sobel_data[10];
-assign p4 = sobel_data[7];
-assign p5 = sobel_data[4];
-assign p6 = sobel_data[9];
-assign p7 = sobel_data[6];
-assign p8 = sobel_data[3];
+assign p0 = sobel_data[8];
+assign p1 = sobel_data[5];
+assign p2 = sobel_data[2];
+assign p3 = sobel_data[7];
+assign p4 = sobel_data[4];
+assign p5 = sobel_data[1];
+assign p6 = sobel_data[6];
+assign p7 = sobel_data[3];
+assign p8 = sobel_data[0];
     
 //유효한 data값(Shift된 후)을 계산하기 위해 delay
 /*reg d_sobel_core_delay;
-
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n)
         d_sobel_core_delay <= 0;
     else
         d_sobel_core_delay <= sobel_core_delay[2];
 end
-
-
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n)
         b1_d1 <= 0;
@@ -634,9 +629,19 @@ always @(posedge clk or negedge rst_n) begin
         b1_d1 <= b1_d1;
 end
 */    
-assign b1_addr1 = addr_cnt_write;
+always @(*) begin
+    if(addr_cnt_write % IMAGE_WIDTH == 0)
+        b1_addr1 <= 0;
+    else if(addr_cnt_write % IMAGE_WIDTH == 1)
+        b1_addr1 <= 0;
+    else if(addr_cnt_write % IMAGE_WIDTH >= 2)
+        b1_addr1 <= addr_cnt_write + IMAGE_WIDTH - 1;
+    else
+        b1_addr1 <= addr_cnt_write;
+end
+
 assign b1_ce1 = move_core_delay || sobel_core_delay;
-assign b1_we1 = move_core_delay || sobel_core_delay;
+assign b1_we1 = move_core_delay || sobel_core_delay[2];
 assign b1_d1 = move_core_delay*move_data + sobel_core_delay[2]*o_sobel;
 
 assign o_idle   = (state_read == IDLE) && (state_write == IDLE);
