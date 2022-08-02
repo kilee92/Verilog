@@ -115,8 +115,19 @@ wire sobel_done;
                 n_state_read = SOBEL;
         end
 
-        MOVE_DONE: n_state_read = IDLE;
-        SOBEL_DONE: n_state_read = IDLE;
+        MOVE_DONE: begin
+            if(state_write == MOVE_DONE)
+                n_state_read = IDLE;
+            else
+                n_state_read = MOVE_DONE;
+        end
+            
+        SOBEL_DONE: begin
+            if(state_write == SOBEL_DONE)
+                n_state_read = IDLE;
+            else
+                n_state_read = SOBEL_DONE;
+        end
 
         default: n_state_read = IDLE;
         
