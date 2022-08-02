@@ -4,8 +4,8 @@ module FSM_Module_Sobel
     parameter ADDR_WIDTH    = 16,
     parameter MEM_SIZE      = 65536, //2^16
 
-    parameter IMAGE_WIDTH   = 5,
-    parameter IMAGE_HEIGHT  = 5
+    parameter IMAGE_WIDTH   = 100,
+    parameter IMAGE_HEIGHT  = 100
 )
 (
     clk         ,
