@@ -51,7 +51,7 @@ wire [DATA_WIDTH:0]     b1_q1       ;
     `probe(rst_n);
     `probe(i_en);
     `probe(i_run);
-    `probe(b1_addr0);
+    `probe(b0_d0);
     `probe(b1_q0);
     
 	// A testbench
@@ -95,23 +95,20 @@ initial begin
     //Start Image data move
     i_en = 1;
     #20
-    i_en = 0;
-
-    wait(o_done);
-
-    //*/
-    
-    /*
-    //Start Image data run
     i_run = 1;
-    #10
-    i_en = 1;
-    #20
-    i_en = 0;
-    
+
     wait(o_done);
+
+    //BRAM1에 저장된 Image data 읽기
+    for(i = 0; i < i_num_cnt; i = i + 1) begin
+        @(posedge clk)
+        b1_ce0      = 1;
+        b1_we0      = 0;
+        b1_addr0    = i;
+    end
     
-    */
+    wait(o_done)
+    
     //BRAM1에 저장된 Image data 읽기
     for(i = 0; i < i_num_cnt; i = i + 1) begin
         @(posedge clk)
@@ -120,42 +117,10 @@ initial begin
         b1_addr0    = i;
     end
 
-    #10
-
-
-
-
-
-    //BRAM0에 Image data 저장
-    for(i = 0; i < i_num_cnt; i = i + 1) begin
-        @(posedge clk)
-        b0_ce0      = 1;
-        b0_we0      = 1;
-        b0_d0       = i + i_num_cnt;
-        b0_addr0    = i;
-    end
-	
-    //Check IDLE state
-    wait(o_idle);
-    
-    ///*
-    //Start Image data move
-    i_en = 1;
-    #20
-    i_en = 0;
-
-    wait(o_done);
-    
-    for(i = 0; i < i_num_cnt; i = i + 1) begin
-        @(posedge clk)
-        b1_ce0      = 1;
-        b1_we0      = 0;
-        b1_addr0    = i;
-    end
-
-    #10        
+    #1000
     
     $finish;
+    
 end
 
 FSM_Module_Sobel
@@ -325,58 +290,8 @@ module FSM_Module_Sobel
     o_write     ,
     o_done       
 );
-    
-    `probe(state_read);
-    `probe(state_write);
-    /*
-    `probe(addr_cnt_read);
-    `probe(b0_addr1);
-    `probe(b0_q1);
-    `probe(b1_addr1);
-    `probe(b1_d1);
-    `probe(o_read);
-    `probe(valid_read);
-    */
-    `probe(sobel_core_delay[0]);
-    `probe(sobel_core_delay[1]);
-    `probe(sobel_core_delay[2]);
-    `probe(b1_addr1);
-    `probe(b1_d1);
-    `probe(o_read);
-    `probe(valid_read);
-    `probe(addr_cnt_write);
-    `probe(b1_we1);
-    `probe(b1_ce1);
-    /*
-    `probe(move_core_delay);
-    `probe(sobel_core_delay[0]);
-    `probe(sobel_core_delay[1]);
-    `probe(sobel_core_delay[2]);
-    `probe(b1_we1);
-    `probe(addr_cnt_write);
-    `probe(b1_addr1);
-    `probe(b1_d1);
-    `probe(sobel_data[0]);
-    `probe(sobel_data[1]);
-    `probe(sobel_data[2]);
-    `probe(sobel_data[3]);
-    `probe(sobel_data[4]);
-    `probe(sobel_data[5]);
-    `probe(sobel_data[6]);
-    `probe(sobel_data[7]);
-    `probe(sobel_data[8]);
-    `probe(p0);
-    `probe(p1);
-    `probe(p2);
-    `probe(p3);
-    `probe(p4);
-    `probe(p5);
-    `probe(p6);
-    `probe(p7);
-    `probe(p8);
-    `probe(o_sobel);
-    */
 
+    
 input                       clk         ;
 input                       rst_n       ;
 input                       i_en  ; //BRAM0에 1frame data 저장 완료
@@ -463,8 +378,19 @@ wire sobel_done;
                 n_state_read = SOBEL;
         end
 
-        MOVE_DONE: n_state_read = IDLE;
-        SOBEL_DONE: n_state_read = IDLE;
+        MOVE_DONE: begin
+            if(state_write == MOVE_DONE)
+                n_state_read = IDLE;
+            else
+                n_state_read = MOVE_DONE;
+        end
+            
+        SOBEL_DONE: begin
+            if(state_write == SOBEL_DONE)
+                n_state_read = IDLE;
+            else
+                n_state_read = SOBEL_DONE;
+        end
 
         default: n_state_read = IDLE;
         
@@ -663,7 +589,7 @@ always @(posedge clk or negedge rst_n) begin
 end
 
 
-//(SOBEL) 행렬(3열->2열, 2열->1열) shift
+//(SOBEL) 행렬(4열->3열, 3열->2열, 2열->1열) shift
 genvar idx;
 
 generate
