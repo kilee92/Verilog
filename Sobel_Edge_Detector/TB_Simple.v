@@ -44,18 +44,19 @@ wire                      b1_we1      ;
 wire [ADDR_WIDTH:0]     b1_addr1    ;
 wire [DATA_WIDTH:0]     b1_q1       ;
 
-	always #5 clk = ~clk;  // Create clock with period=10
-	initial `probe_start;   // Start the timing diagram
+always #5 clk = ~clk;  // Create clock with period=10
+initial `probe_start;   // Start the timing diagram
 
-	`probe(clk);        // Probe signal "clk"
+    `probe(clk);        // Probe signal "clk"
     `probe(rst_n);
     `probe(i_en);
     `probe(i_run);
     `probe(b0_d0);
     `probe(b1_q0);
+    `probe(o_done);
     
 	// A testbench
-integer i;
+integer i,j;
 initial begin
     clk         = 0;
     rst_n       = 1;
@@ -87,42 +88,32 @@ initial begin
         b0_d0       = i;
         b0_addr0    = i;
     end
-	
-    //Check IDLE state
-    wait(o_idle);
     
-    ///*
+    #10
+    
     //Start Image data move
     i_en = 1;
-    #20
+    #200
     i_run = 1;
-
-    wait(o_done);
-
-    //BRAM1에 저장된 Image data 읽기
-    for(i = 0; i < i_num_cnt; i = i + 1) begin
-        @(posedge clk)
-        b1_ce0      = 1;
-        b1_we0      = 0;
-        b1_addr0    = i;
-    end
     
-    wait(o_done)
-    
-    //BRAM1에 저장된 Image data 읽기
-    for(i = 0; i < i_num_cnt; i = i + 1) begin
-        @(posedge clk)
-        b1_ce0      = 1;
-        b1_we0      = 0;
-        b1_addr0    = i;
-    end
-
     #1000
-    
+
     $finish;
     
 end
 
+always @(*) begin
+    
+    wait(o_done);
+    
+    for(j = 0; j < i_num_cnt; j = j + 1) begin
+        @(posedge clk)
+        b1_ce0      = 1;
+        b1_we0      = 0;
+        b1_addr0    = j;
+    end
+end
+    
 FSM_Module_Sobel
 #(
     .DATA_WIDTH(8)      ,
@@ -291,6 +282,8 @@ module FSM_Module_Sobel
     o_done       
 );
 
+    `probe(state_read);
+    `probe(state_write);
     
 input                       clk         ;
 input                       rst_n       ;
