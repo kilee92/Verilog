@@ -28,57 +28,6 @@ module FSM_Module_Sobel
     o_write     ,
     o_done       
 );
-    
-    `probe(state_read);
-    `probe(state_write);
-    /*
-    `probe(addr_cnt_read);
-    `probe(b0_addr1);
-    `probe(b0_q1);
-    `probe(b1_addr1);
-    `probe(b1_d1);
-    `probe(o_read);
-    `probe(valid_read);
-    */
-    `probe(sobel_core_delay[0]);
-    `probe(sobel_core_delay[1]);
-    `probe(sobel_core_delay[2]);
-    `probe(b1_addr1);
-    `probe(b1_d1);
-    `probe(o_read);
-    `probe(valid_read);
-    `probe(addr_cnt_write);
-    `probe(b1_we1);
-    `probe(b1_ce1);
-    /*
-    `probe(move_core_delay);
-    `probe(sobel_core_delay[0]);
-    `probe(sobel_core_delay[1]);
-    `probe(sobel_core_delay[2]);
-    `probe(b1_we1);
-    `probe(addr_cnt_write);
-    `probe(b1_addr1);
-    `probe(b1_d1);
-    `probe(sobel_data[0]);
-    `probe(sobel_data[1]);
-    `probe(sobel_data[2]);
-    `probe(sobel_data[3]);
-    `probe(sobel_data[4]);
-    `probe(sobel_data[5]);
-    `probe(sobel_data[6]);
-    `probe(sobel_data[7]);
-    `probe(sobel_data[8]);
-    `probe(p0);
-    `probe(p1);
-    `probe(p2);
-    `probe(p3);
-    `probe(p4);
-    `probe(p5);
-    `probe(p6);
-    `probe(p7);
-    `probe(p8);
-    `probe(o_sobel);
-    */
 
 input                       clk         ;
 input                       rst_n       ;
