@@ -1,8 +1,8 @@
 module DPBRAM
 #(
     parameter DATA_WIDTH    = 8,
-    parameter ADDR_WIDTH    = 12,
-    parameter MEM_SIZE      = 4096 // 2^12 = 4096
+    parameter ADDR_WIDTH    = 16,
+    parameter MEM_SIZE      = 65536 // 2^16
 )
 (
     clk     ,
