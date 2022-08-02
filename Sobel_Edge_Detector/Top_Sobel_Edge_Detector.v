@@ -1,11 +1,11 @@
 module Top_Sobel_Edge_Detect
 #(
     parameter DATA_WIDTH    = 8,
-    parameter ADDR_WIDTH    = 12,
-    parameter MEM_SIZE      = 4096, // 2^12 = 4096
+    parameter ADDR_WIDTH    = 16,
+    parameter MEM_SIZE      = 65536, // 2^16
 
     parameter IMAGE_WIDTH   = 100,
-    parameter IMAGE_HEIGHT  = 100
+    parameter IMAGE_HEIGHT  = 100    
 )
 (
     input                       clk         ,
@@ -48,7 +48,15 @@ wire [ADDR_WIDTH-1:0]      b1_addr1    ;
 
 wire [DATA_WIDTH-1:0]      b1_q1       ;
 
-FSM_Module_Sobel u0(
+FSM_Module_Sobel
+#(
+    .DATA_WIDTH     (DATA_WIDTH  ),
+    .ADDR_WIDTH     (ADDR_WIDTH  ),
+    .MEM_SIZE       (MEM_SIZE    ),
+    .IMAGE_WIDTH    (IMAGE_WIDTH ),
+    .IMAGE_HEIGHT   (IMAGE_HEIGHT)
+)
+u0(
     .clk         (clk      ),
     .rst_n       (rst_n    ),
     .i_en        (i_en     ),
@@ -70,7 +78,13 @@ FSM_Module_Sobel u0(
     .o_done      (o_done   ) 
 );
 
-DPBRAM b0(
+DPBRAM
+#(
+    .DATA_WIDTH    (DATA_WIDTH),
+    .ADDR_WIDTH    (ADDR_WIDTH),
+    .MEM_SIZE      (MEM_SIZE  ) 
+)
+b0(
     .clk     (clk  ),
     .addr0   (b0_addr0),
     .ce0     (b0_ce0  ),
@@ -84,7 +98,13 @@ DPBRAM b0(
     .q1      (b0_q1   ) 
 );
 
-DPBRAM b1(
+DPBRAM
+#(
+    .DATA_WIDTH    (DATA_WIDTH),
+    .ADDR_WIDTH    (ADDR_WIDTH),
+    .MEM_SIZE      (MEM_SIZE  ) 
+)
+b1(
     .clk     (clk  ),
     .addr0   (b1_addr0),
     .ce0     (b1_ce0  ),
