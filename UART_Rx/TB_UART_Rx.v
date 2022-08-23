@@ -52,6 +52,14 @@ initial begin
     i_tx_en = 0;
     #20
     
+    if(o_rx_complete) begin
+        if(i_tx_d == o_rx_d)
+            $display("complete", o_rx_d);
+        else
+            $display("complete", o_rx_d);
+    end
+        
+    
     //모든 데이터가 전송되는 시간을 계산하여 run time 동안 대기
     #100000
 
