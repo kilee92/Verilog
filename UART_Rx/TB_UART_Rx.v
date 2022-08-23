@@ -54,9 +54,9 @@ initial begin
     
     if(o_rx_complete) begin
         if(i_tx_d == o_rx_d)
-            $display("complete", o_rx_d);
+            $display("complete");
         else
-            $display("complete", o_rx_d);
+            $display("error");
     end
         
     
