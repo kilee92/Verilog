@@ -24,7 +24,7 @@ input               sampling            ;
 
 output reg          catch_bit           ;
 output reg [3:0]    catch_bit_cnt       ;
-output reg          shift_rst           ;
+output              shift_rst           ;
 output              o_rx_complete       ;
 output              o_rx_error          ;
 
@@ -192,23 +192,17 @@ always @(posedge clk or negedge rst_n) begin
 end
 
 //Output logic
-always @(state) begin
-    if(state == IDLE) begin
-        shift_rst <= 1;
-        catch_bit_cnt <= 0;
-        catch_bit <= 0;
+always @(state) begin  
+    if(state == DATA_DECISION) begin
+        catch_bit_cnt <= bit_cnt;
+        catch_bit <= (b0&b1) | (b0&b2) | (b1&b2); //Karnom map을 통하여 논리식 확인
     end else begin
-        shift_rst <= 0;    
-        if(state == DATA_DECISION) begin
-            catch_bit_cnt <= bit_cnt;
-            catch_bit <= (b0&b1) | (b0&b2) | (b1&b2); //Karnom map을 통하여 논리식 확인
-        end else begin
-            catch_bit_cnt <= catch_bit_cnt;
-            catch_bit <= catch_bit;
-        end
+        catch_bit_cnt <= catch_bit_cnt;
+        catch_bit <= catch_bit;
     end
 end
 
+assign shift_rst = (state == IDLE) ? 1'b1 : 1'b0;
 assign o_rx_complete = (state == RECEIVE_COMPLETE) ? 1'b1 : 1'b0;
 assign o_rx_error = (state == RECEIVE_ERROR) ? 1'b1 : 1'b0;
 
