@@ -63,7 +63,7 @@ initial begin
     
     #100
 
-    //BRAM0에 Image data 저장
+    //BRAM0에 MOVE Image data 저장
     for(i = 0; i < i_num_cnt; i = i + 1) begin
         @(posedge clk)
         b0_ce0      = 1;
@@ -88,26 +88,31 @@ initial begin
         b1_addr0    = j;
     end
 
-    #100
+    #1000
 
-    //BRAM0에 New Image data 저장
+    //BRAM0에 SOBEL Image data 저장
     for(i = 0; i <i_num_cnt; i = i + 1) begin
         @(posedge clk)
         b0_ce0      = 1;
         b0_we0      = 1;
-        b0_d0       = i+25;
-        b0_addr0    = i;
+        if(i < IMAGE_WIDTH * 3) begin
+            b0_d0       = 255;
+            b0_addr0    = i;
+        end else begin
+            b0_d0       = 0;
+            b0_addr0    = i;
+        end
     end
     
-    //Start New Image data move
+    //Start Image data sobel & move
     i_en = 1;
     #10
     i_en = 0;    
     
-    //data move complete
+    //data sobel & move complete
     wait(o_done)
     
-    //BRAM1에서 New Image data 출력
+    //BRAM1에서 Image data 출력
     for(j = 0; j < i_num_cnt; j = j + 1) begin
         @(posedge clk)
         b1_ce0      = 1;
