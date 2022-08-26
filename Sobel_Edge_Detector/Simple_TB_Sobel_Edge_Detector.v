@@ -1,4 +1,4 @@
-module Simple_TB_Sobel_Edge_Detector_MOVE
+module Simple_TB_Sobel_Edge_Detector
 #(
     parameter DATA_WIDTH    = 8,
     parameter ADDR_WIDTH    = 16,
